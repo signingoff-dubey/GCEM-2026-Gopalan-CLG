@@ -124,10 +124,19 @@ def build_safe_windows(ranking_table: pd.DataFrame, X_fit, y_fit, X_test, y_test
             test_check["verdict"] = "held on test"
         else:
             test_check["verdict"] = "did not hold on test (possible drift)"
+        if not row["stable"]:
+            status = "unstable - not recommended"
+        elif test_check["verdict"].startswith("did not hold"):
+            status = "stable but did not hold on test - not recommended"
+        elif test_check["verdict"] == "held on test":
+            status = "recommended"
+        else:
+            status = "recommended (test inconclusive)"
         entry = {
             "feature": feature,
             "stable": bool(row["stable"]),
-            "status": "recommended" if row["stable"] else "unstable - not recommended",
+            "status": status,
+            "recommended": status.startswith("recommended"),
             **sw,
             "reduction_if_in_window": reduction_range(sw, baseline),
             "test_window_check": {**test_check, "label": "observed on held-out later window (non-model)"},
