@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Box, LoaderCircle, ScanSearch, TriangleAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Box, Check as CheckIcon, LoaderCircle, PhoneCall, ScanSearch, TriangleAlert } from 'lucide-react';
 import { Banner, CardTitle, Tabs } from '../components/ui';
 import Gate, { StatusCard } from '../components/ui/Gate';
 import ModelViewer from '../components/ModelViewer';
+import DamagePanel from '../components/DamagePanel';
+import AssemblyViewer from '../components/AssemblyViewer';
 import { api, post, postForm } from '../lib/api';
 import { num, pct } from '../lib/format';
 import { useApi } from '../lib/useApi';
@@ -162,6 +164,33 @@ const Check = ({ title, c, children }) => (
   </section>
 );
 
+// Per-part damage for multi-part models (e.g. the Blender team's semiconductor packages).
+const PartDamage = ({ p }) => (
+  <section className="mt-4 rounded-2xl bg-ink/5 p-3.5">
+    <h3 className="flex items-center justify-between gap-2 text-sm font-semibold">
+      <span>Damage found in the parts</span>
+      <span className="text-xs font-medium text-ink/55">
+        {num(p.counts?.damaged_parts, 0)} damaged, {num(p.counts?.damage_markers, 0)} marks{p.thermal?.max_c != null ? `, hottest ${p.thermal.max_c} °C (simulated)` : ''}
+      </span>
+    </h3>
+    {p.damage?.length ? (
+      <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+        {[...p.damage].sort((a, b) => (b.severity ?? 0) - (a.severity ?? 0)).map((d) => (
+          <li key={d.part} className="rounded-xl bg-bad/10 p-2.5 text-sm">
+            <p className="flex items-center gap-1.5 font-semibold"><TriangleAlert size={13} className="text-bad" /> {d.display_name}</p>
+            <p className="mt-0.5 text-xs text-ink/70 first-letter:uppercase">
+              {d.type}{d.internal ? ', internal' : ', external'}{d.severity != null ? `, severity ${d.severity}` : ''}{d.temp_c != null ? `, ${d.temp_c} °C (simulated)` : ''}
+            </p>
+            {d.description && <p className="mt-0.5 text-xs text-ink/60">{d.description}</p>}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="mt-2 text-sm text-ink/60">No damaged parts in this model.</p>
+    )}
+  </section>
+);
+
 const Result = ({ r }) => (
   <section className="card" aria-live="polite">
     <CardTitle
@@ -176,15 +205,29 @@ const Result = ({ r }) => (
     >
       Scan result
     </CardTitle>
-    {r.model_url ? <ModelViewer key={r.model_url} url={r.model_url} /> : <p className="rounded-xl bg-ink/5 px-3 py-6 text-center text-sm text-ink/60">No 3D model was produced for this scan.</p>}
+    {r.parts ? (
+      <AssemblyViewer key={r.parts.model_url} manifest={{ ...r.parts, label: r.inputs?.mesh }} />
+    ) : r.model_url ? (
+      <ModelViewer key={r.model_url} url={r.model_url} />
+    ) : (
+      <p className="rounded-xl bg-ink/5 px-3 py-6 text-center text-sm text-ink/60">No 3D model was produced for this scan.</p>
+    )}
+    {r.parts ? (
+      <p className="mt-2 text-xs text-ink/65">
+        Multi-part model: {num(r.parts.counts?.parts, 0)} parts. View damage takes it apart, isolates the damaged part and shows the heat view;
+        the slider explodes it. Temperatures are simulated{r.parts.warnings?.some((w) => w.includes('inferred')) ? '; damage is read from the object names in the file' : ''}.
+      </p>
+    ) : (
     <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink/65">
       <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-bad" /> crack faces</span>
       <span className="flex items-center gap-1.5"><span className="h-2.5 w-10 rounded-sm" style={{ background: 'linear-gradient(90deg, #2f5fd0, #d63a3a)' }} /> dent deviation, small to large</span>
       <span>Drag to rotate, scroll to zoom.</span>
     </p>
+    )}
     <p className="mt-3 flex items-start gap-2 rounded-xl bg-warn/15 px-3 py-2 text-xs font-medium"><TriangleAlert size={14} className="mt-0.5 shrink-0" /> {r.sensor_note || SENSOR_NOTE}</p>
     {r.artificial && <p className="mt-2 text-xs text-ink/65">Marked as an artificial defect: this tests the check and is not a finding about a real part.</p>}
 
+    {r.parts && <PartDamage p={r.parts} />}
     <div className="mt-4 grid gap-3 lg:grid-cols-3">
       <section className="rounded-2xl bg-ink/5 p-3.5">
         <h3 className="text-sm font-semibold">Mesh</h3>
@@ -242,9 +285,69 @@ const History = ({ q, currentId, onOpen }) => (
   </section>
 );
 
-const Inspection = () => {
+const MODES = ['View damage (3D model)', 'Surface scan'];
+
+// #/inspection/<id>: a_ / demo_ ids are 3D models (View damage), i_ ids are surface scans.
+// Phones the alert number now; the Sarvam agent reads out this inspection's findings and takes questions.
+const PlaceCall = ({ itemId }) => {
+  const [state, setState] = useState({ busy: false, ok: null, text: '' });
+  useEffect(() => setState({ busy: false, ok: null, text: '' }), [itemId]);
+  const call = async () => {
+    setState({ busy: true, ok: null, text: '' });
+    try {
+      const r = await post('/api/alerts/call', { id: itemId }, { signal: AbortSignal.timeout(30000) });
+      const res = r.results?.[0];
+      setState({ busy: false, ok: !!res?.ok, text: res?.ok ? `${res.result}, ${r.findings} finding${r.findings === 1 ? '' : 's'}` : res?.result || 'Call not placed' });
+    } catch (e) {
+      setState({ busy: false, ok: false, text: errText(e) });
+    }
+  };
+  return (
+    <div className="flex items-center gap-3">
+      {state.text && (
+        <span role="status" className={`hidden max-w-xs truncate text-sm font-medium sm:block ${state.ok ? 'text-white/80' : 'text-bad'}`} title={state.text}>
+          {state.text}
+        </span>
+      )}
+      <div className="rounded-full bg-black/25 p-1 ring-1 ring-white/10">
+        <button
+          type="button"
+          onClick={call}
+          disabled={!itemId || state.busy}
+          title={itemId ? "Call the alert number with this inspection's report" : 'Open a model or scan first'}
+          className="flex items-center gap-2 rounded-full bg-accent px-3.5 py-1.5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-40"
+        >
+          {state.busy ? <LoaderCircle size={15} className="animate-spin" /> : state.ok ? <CheckIcon size={15} /> : <PhoneCall size={15} />}
+          {state.busy ? 'Calling...' : 'Place call'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Inspection = ({ id }) => {
+  const scanId = id?.startsWith('i_') ? id : null;
+  const [mode, setMode] = useState(scanId ? MODES[1] : MODES[0]);
+  const [current, setCurrent] = useState({});
+  const track = (m) => (itemId) => setCurrent((c) => (c[m] === itemId ? c : { ...c, [m]: itemId }));
+  return (
+    <div className="flex flex-col gap-[var(--gap)]">
+      <Banner tone="info">
+        <strong>Separate capability, not part of root-cause analysis.</strong> These views look at a part&apos;s 3D model or scan. They do not feed the ranking, the safe windows or the savings. Sample models carry simulated damage and thermal data; scans are analyzed after upload.
+      </Banner>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs dark tabs={MODES} active={mode} onChange={setMode} />
+        <PlaceCall itemId={current[mode]} />
+      </div>
+      {mode === MODES[0] ? <DamagePanel id={scanId ? undefined : id} onCurrent={track(MODES[0])} /> : <SurfaceScan openId={scanId} onCurrent={track(MODES[1])} />}
+    </div>
+  );
+};
+
+const SurfaceScan = ({ openId, onCurrent }) => {
   const [tab, setTab] = useState(TABS[0]);
   const [result, setResult] = useState(null);
+  useEffect(() => onCurrent?.(result?.id), [result?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const history = useApi('/api/inspection');
@@ -261,12 +364,12 @@ const Inspection = () => {
       setError(`Could not open that scan: ${errText(e)}`);
     }
   };
+  useEffect(() => {
+    if (openId) open(openId);
+  }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col gap-[var(--gap)]">
-      <Banner tone="info">
-        <strong>Separate capability, not part of root-cause analysis.</strong> Inspection looks at the surface of a 3D scan. It does not feed the ranking, the safe windows or the savings, and it says nothing about why parts fail. Scans are analyzed after upload.
-      </Banner>
       <div className="grid gap-[var(--gap)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]">
         <div className="flex flex-col gap-[var(--gap)]">
           <section className="card" aria-busy={busy}>
