@@ -1,0 +1,168 @@
+{
+  "lgbm": {
+    "real+interp_fails": {
+      "pr_auc": 0.16544484057095435,
+      "mcc": 0.06431696433353659,
+      "bal_acc": 0.5593264545520713,
+      "pr_auc_delta_vs_real_only": -0.005638239448610012,
+      "folds_improved": 3,
+      "per_fold_pr_auc": [
+        0.0397,
+        0.4771,
+        0.0867,
+        0.0583
+      ]
+    },
+    "real+synth2026": {
+      "pr_auc": 0.12992952177661182,
+      "mcc": 0.1031690288201158,
+      "bal_acc": 0.5895885459756588,
+      "pr_auc_delta_vs_real_only": -0.041153558242952575,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.0453,
+        0.334,
+        0.0826,
+        0.0578
+      ]
+    },
+    "real+synth2026+interp_fails": {
+      "pr_auc": 0.11468956134588393,
+      "mcc": 0.07974263577630232,
+      "bal_acc": 0.5561534236514277,
+      "pr_auc_delta_vs_real_only": -0.05639351867368047,
+      "folds_improved": 3,
+      "per_fold_pr_auc": [
+        0.0567,
+        0.257,
+        0.0849,
+        0.0602
+      ]
+    },
+    "real_interp_missing": {
+      "pr_auc": 0.15971529980072113,
+      "mcc": 0.056750912801859676,
+      "bal_acc": 0.5483143121058922,
+      "pr_auc_delta_vs_real_only": -0.011367780218843264,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0331,
+        0.465,
+        0.0954,
+        0.0453
+      ]
+    },
+    "real_only": {
+      "pr_auc": 0.17108308001956435,
+      "mcc": 0.09118503992626456,
+      "bal_acc": 0.5360619733609349,
+      "pr_auc_delta_vs_real_only": 0.0,
+      "folds_improved": 0,
+      "per_fold_pr_auc": [
+        0.0386,
+        0.5098,
+        0.0835,
+        0.0525
+      ]
+    },
+    "synth2026_only": {
+      "pr_auc": 0.08262759313950375,
+      "mcc": 0.04969573211549281,
+      "bal_acc": 0.5298383799477052,
+      "pr_auc_delta_vs_real_only": -0.08845548688006064,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.03,
+        0.149,
+        0.0793,
+        0.0721
+      ]
+    }
+  },
+  "logistic": {
+    "real+interp_fails": {
+      "pr_auc": 0.06468048534713979,
+      "mcc": 0.04493754541041339,
+      "bal_acc": 0.5400813755127016,
+      "pr_auc_delta_vs_real_only": -0.00016046212933296458,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.0405,
+        0.087,
+        0.0643,
+        0.0669
+      ]
+    },
+    "real+synth2026": {
+      "pr_auc": 0.07888638255962874,
+      "mcc": 0.04459757922342546,
+      "bal_acc": 0.5378415404104705,
+      "pr_auc_delta_vs_real_only": 0.014045435083155982,
+      "folds_improved": 3,
+      "per_fold_pr_auc": [
+        0.0624,
+        0.0735,
+        0.0663,
+        0.1133
+      ]
+    },
+    "real+synth2026+interp_fails": {
+      "pr_auc": 0.07883515875316892,
+      "mcc": -0.0004495904501423363,
+      "bal_acc": 0.4992039572576701,
+      "pr_auc_delta_vs_real_only": 0.013994211276696169,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.0655,
+        0.0737,
+        0.0646,
+        0.1115
+      ]
+    },
+    "real_interp_missing": {
+      "pr_auc": 0.06161824139906259,
+      "mcc": 0.019598406205932683,
+      "bal_acc": 0.5360558219785949,
+      "pr_auc_delta_vs_real_only": -0.0032227060774101535,
+      "folds_improved": 3,
+      "per_fold_pr_auc": [
+        0.0615,
+        0.0402,
+        0.0686,
+        0.0761
+      ]
+    },
+    "real_only": {
+      "pr_auc": 0.06484094747647275,
+      "mcc": 0.0385265486166841,
+      "bal_acc": 0.5437828994004903,
+      "pr_auc_delta_vs_real_only": 0.0,
+      "folds_improved": 0,
+      "per_fold_pr_auc": [
+        0.0396,
+        0.081,
+        0.0655,
+        0.0733
+      ]
+    },
+    "synth2026_only": {
+      "pr_auc": 0.06556799508493483,
+      "mcc": 0.005036636607670002,
+      "bal_acc": 0.5037612649083898,
+      "pr_auc_delta_vs_real_only": 0.000727047608462086,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.0451,
+        0.0701,
+        0.0905,
+        0.0565
+      ]
+    }
+  },
+  "test_positives_per_fold": [
+    6,
+    7,
+    17,
+    9
+  ]
+}

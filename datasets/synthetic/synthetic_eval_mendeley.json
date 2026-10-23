@@ -1,0 +1,168 @@
+{
+  "lgbm": {
+    "real+interp_fails": {
+      "pr_auc": 0.09746441301476966,
+      "mcc": 0.02428085138871322,
+      "bal_acc": 0.5149228794619743,
+      "pr_auc_delta_vs_real_only": -0.004335573636389291,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.1056,
+        0.0811,
+        0.0951,
+        0.1081
+      ]
+    },
+    "real+synth2026": {
+      "pr_auc": 0.09855432265924703,
+      "mcc": 0.030668985594223007,
+      "bal_acc": 0.5217261794404728,
+      "pr_auc_delta_vs_real_only": -0.00324566399191192,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0958,
+        0.0881,
+        0.1055,
+        0.1049
+      ]
+    },
+    "real+synth2026+interp_fails": {
+      "pr_auc": 0.09716246649778724,
+      "mcc": 0.010208422493273871,
+      "bal_acc": 0.5082616119048629,
+      "pr_auc_delta_vs_real_only": -0.00463752015337171,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.1036,
+        0.0802,
+        0.0961,
+        0.1088
+      ]
+    },
+    "real_interp_missing": {
+      "pr_auc": 0.09761611677806781,
+      "mcc": 0.020753039386832855,
+      "bal_acc": 0.516697070324467,
+      "pr_auc_delta_vs_real_only": -0.004183869873091141,
+      "folds_improved": 2,
+      "per_fold_pr_auc": [
+        0.0846,
+        0.0919,
+        0.0979,
+        0.116
+      ]
+    },
+    "real_only": {
+      "pr_auc": 0.10179998665115896,
+      "mcc": 0.016260549751538567,
+      "bal_acc": 0.5097995939834741,
+      "pr_auc_delta_vs_real_only": 0.0,
+      "folds_improved": 0,
+      "per_fold_pr_auc": [
+        0.1035,
+        0.0939,
+        0.0951,
+        0.1147
+      ]
+    },
+    "synth2026_only": {
+      "pr_auc": 0.08426145324531883,
+      "mcc": -0.0031996443393205805,
+      "bal_acc": 0.4983073140190194,
+      "pr_auc_delta_vs_real_only": -0.017538533405840107,
+      "folds_improved": 0,
+      "per_fold_pr_auc": [
+        0.0918,
+        0.0825,
+        0.0681,
+        0.0946
+      ]
+    }
+  },
+  "logistic": {
+    "real+interp_fails": {
+      "pr_auc": 0.09215969942231271,
+      "mcc": 0.0024960634169540036,
+      "bal_acc": 0.5033885143376126,
+      "pr_auc_delta_vs_real_only": -0.010921594020737339,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0841,
+        0.092,
+        0.0982,
+        0.0943
+      ]
+    },
+    "real+synth2026": {
+      "pr_auc": 0.10207414453642898,
+      "mcc": 0.02245941490088463,
+      "bal_acc": 0.5201510136432166,
+      "pr_auc_delta_vs_real_only": -0.0010071489066210762,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0908,
+        0.1182,
+        0.0913,
+        0.108
+      ]
+    },
+    "real+synth2026+interp_fails": {
+      "pr_auc": 0.0919118045998677,
+      "mcc": 0.01140283200953565,
+      "bal_acc": 0.5085586267470623,
+      "pr_auc_delta_vs_real_only": -0.011169488843182356,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.083,
+        0.0935,
+        0.0872,
+        0.1039
+      ]
+    },
+    "real_interp_missing": {
+      "pr_auc": 0.09564016653487166,
+      "mcc": 0.018622821648191932,
+      "bal_acc": 0.5226258019149,
+      "pr_auc_delta_vs_real_only": -0.007441126908178396,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0831,
+        0.1058,
+        0.0901,
+        0.1036
+      ]
+    },
+    "real_only": {
+      "pr_auc": 0.10308129344305005,
+      "mcc": 0.03026984428575869,
+      "bal_acc": 0.5313095482039497,
+      "pr_auc_delta_vs_real_only": 0.0,
+      "folds_improved": 0,
+      "per_fold_pr_auc": [
+        0.0911,
+        0.1227,
+        0.0965,
+        0.1021
+      ]
+    },
+    "synth2026_only": {
+      "pr_auc": 0.09337226738443169,
+      "mcc": 0.02294031790590234,
+      "bal_acc": 0.5121392219829266,
+      "pr_auc_delta_vs_real_only": -0.009709026058618356,
+      "folds_improved": 1,
+      "per_fold_pr_auc": [
+        0.0898,
+        0.103,
+        0.0761,
+        0.1046
+      ]
+    }
+  },
+  "test_positives_per_fold": [
+    79,
+    75,
+    69,
+    90
+  ]
+}
