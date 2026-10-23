@@ -1,3 +1,4 @@
+import { useLiveRefetch } from '../lib/useLiveRefetch';
 import { useEffect, useState } from 'react';
 import { Box, Check as CheckIcon, LoaderCircle, PhoneCall, ScanSearch, TriangleAlert } from 'lucide-react';
 import { Banner, CardTitle, Tabs } from '../components/ui';
@@ -388,6 +389,7 @@ const SurfaceScan = ({ openId, onCurrent }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const history = useApi('/api/inspection');
+  useLiveRefetch('inspections', history.refetch);
 
   const onResult = (r) => {
     setResult(r);

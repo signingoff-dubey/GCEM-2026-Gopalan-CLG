@@ -1,3 +1,4 @@
+import { useLiveRefetch } from '../lib/useLiveRefetch';
 import { useEffect, useState } from 'react';
 import { Box, Flame, LoaderCircle, ScanEye, TriangleAlert, Upload } from 'lucide-react';
 import { CardTitle } from './ui';
@@ -184,6 +185,7 @@ const DamagePanel = ({ id, onCurrent }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const history = useApi('/api/assembly');
+  useLiveRefetch('assemblies', history.refetch);
 
   const open = async (aid) => {
     setError('');

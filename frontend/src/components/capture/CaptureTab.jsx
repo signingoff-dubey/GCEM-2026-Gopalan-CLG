@@ -1,3 +1,4 @@
+import { useLiveRefetch } from '../../lib/useLiveRefetch';
 import { useState } from 'react';
 import { Camera, CircleAlert, CircleCheck, CircleX, ExternalLink, ImageUp, LoaderCircle, RotateCw } from 'lucide-react';
 import { CardTitle } from '../ui';
@@ -247,6 +248,7 @@ const CaptureTab = () => {
   const [error, setError] = useState('');
   const [rescoreError, setRescoreError] = useState('');
   const history = useApi('/api/captures');
+  useLiveRefetch('captures', history.refetch);
 
   const done = (r) => {
     setCap(r);
