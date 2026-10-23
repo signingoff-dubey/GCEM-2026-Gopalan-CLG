@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, Camera, X } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import Logo from './Logo';
-import { sidebarGroups, homeItem, settingsItem, groupOf } from '../navigation';
+import { homeItem, sections, sectionOf, settingsItem } from '../navigation';
 import Liquid from './ui/Liquid';
 
 // A scroll area that fades only the edge that has more to scroll to. At the very top nothing fades at the top, at the very bottom nothing
@@ -48,7 +48,7 @@ const Brand = ({ showName }) => (
 const Tooltip = ({ children }) => (
   <span
     role="tooltip"
-    className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg ring-1 ring-white/10 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100"
+    className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap popover !rounded-xl px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg ring-1 ring-white/10 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100"
   >
     {children}
   </span>
@@ -88,101 +88,30 @@ const NavButton = ({ item, active, expanded, onSelect, badge, accent = false, pi
   );
 };
 
-const GROUPS_KEY = 'nav-groups';
-
-// Which groups are folded open, remembered on this device. The group of the page you are on is always opened.
-const useGroups = (active) => {
-  const [open, setOpen] = useState(() => {
-    const base = Object.fromEntries(sidebarGroups.map((g) => [g.id, g.defaultOpen]));
-    try {
-      return { ...base, ...JSON.parse(localStorage.getItem(GROUPS_KEY) || '{}') };
-    } catch {
-      return base;
-    }
-  });
-  const save = (next) => {
-    try {
-      localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
-    } catch {
-      // Storage blocked: the folds hold until the page reloads.
-    }
-    return next;
-  };
-  const set = useCallback((id, value) => setOpen((cur) => (cur[id] === value ? cur : save({ ...cur, [id]: value }))), []);
-  useEffect(() => {
-    const id = groupOf(active);
-    if (id) set(id, true);
-  }, [active, set]);
-  return [open, set];
-};
-
-const GroupHeader = ({ group, open, onToggle, expanded, hasActive }) => {
-  const Icon = group.icon;
-  return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={`nav-group-${group.id}`}
-        aria-label={expanded ? undefined : `${group.title}, ${group.items.length} screens`}
-        className={`flex h-8 w-full items-center gap-3 rounded-lg px-[11px] text-xs font-semibold uppercase tracking-wide transition-colors hover:bg-white/5 hover:text-white/80 ${hasActive && !open ? 'text-white/80' : 'text-white/40'}`}
-      >
-        <Icon size={16} className="shrink-0" />
-        <span className={`min-w-0 flex-1 truncate text-left ${fade(expanded)}`}>{group.title}</span>
-        <span className={`flex shrink-0 items-center gap-1.5 ${fade(expanded)}`}>
-          {!open && <span className="rounded-md bg-white/10 px-1.5 py-px text-[10px] font-medium normal-case tracking-normal">{group.items.length}</span>}
-          <ChevronDown size={14} className={`transition-transform ${open ? '' : '-rotate-90'}`} />
-        </span>
-      </button>
-      {!expanded && <Tooltip>{`${group.title} (${group.items.length})`}</Tooltip>}
-    </div>
-  );
-};
-
-const NavList = ({ active, onSelect, expanded, badges, pillId, onExpand }) => {
-  const [open, setOpen] = useGroups(active);
-  const row = (item) => (
-    <NavButton key={item.slug} item={item} active={active === item.slug} expanded={expanded} onSelect={onSelect} badge={badges[item.slug]} pillId={pillId} />
-  );
+// Overview and four sections. A section opens on its first screen; the screens inside it are tabs on the page.
+const NavList = ({ active, onSelect, expanded, badges, pillId }) => {
+  const current = sectionOf(active)?.id;
   return (
     <nav aria-label="Main" className="flex flex-1 flex-col gap-1">
-      {row(homeItem)}
-      {sidebarGroups.map((group) => {
-        const isOpen = open[group.id];
-        const hasActive = group.items.some((i) => i.slug === active);
-        // In the narrow rail a folded group is one icon. Clicking it widens the rail and opens the group.
-        const toggle = () => {
-          if (!expanded && !isOpen && onExpand) onExpand();
-          setOpen(group.id, expanded ? !isOpen : true);
-        };
-        return (
-          <div key={group.id} className="mt-1 flex flex-col gap-1">
-            <GroupHeader group={group} open={isOpen} onToggle={toggle} expanded={expanded} hasActive={hasActive} />
-            <motion.div
-              id={`nav-group-${group.id}`}
-              initial={false}
-              animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
-              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              style={{ overflow: isOpen ? 'visible' : 'hidden' }}
-              inert={!isOpen}
-              className="flex flex-col gap-1"
-            >
-              {group.items.map(row)}
-            </motion.div>
-          </div>
-        );
-      })}
+      <NavButton item={homeItem} active={active === homeItem.slug} expanded={expanded} onSelect={onSelect} badge={badges[homeItem.slug]} pillId={pillId} />
+      {sections.map((sec) => (
+        <NavButton
+          key={sec.id}
+          item={{ slug: sec.items[0].slug, label: sec.label, icon: sec.icon }}
+          active={current === sec.id}
+          expanded={expanded}
+          onSelect={onSelect}
+          badge={sec.items.map((i) => badges[i.slug]).find(Boolean)}
+          pillId={pillId}
+        />
+      ))}
     </nav>
   );
 };
 
 const Footer = ({ expanded, onSelect, active }) => (
   <div className="flex flex-col gap-1">
-    <NavButton item={{ slug: 'captures', label: 'New capture', icon: Camera }} expanded={expanded} onSelect={onSelect} accent />
-    <div className="mt-1 flex flex-col gap-1">
-      <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
-    </div>
+    <NavButton item={settingsItem} active={active === 'settings'} expanded={expanded} onSelect={onSelect} />
   </div>
 );
 
@@ -238,7 +167,7 @@ const Rail = ({ active, onSelect, expanded, onToggle, badges }) => (
     <div className="glass-panel flex min-h-0 flex-1 flex-col rounded-[28px] px-[11px] py-3">
       <RailHeader expanded={expanded} onToggle={onToggle} />
       <FadeScroll className="-mx-1 mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" onExpand={expanded ? undefined : onToggle} />
+        <NavList active={active} onSelect={onSelect} expanded={expanded} badges={badges} pillId="rail-pill" />
       </FadeScroll>
     </div>
     <div className="glass-panel shrink-0 rounded-[28px] px-[11px] py-3">

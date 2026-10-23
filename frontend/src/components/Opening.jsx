@@ -3,7 +3,7 @@ import logoSvg from '../assets/rootlens-logo.svg?raw';
 
 // RootLens opening (from the brand team's animation/): the logo builds, the lens sweeps the line and finds the one
 // orange node, a square locks onto it, the fault is traced back up its root, then the hexagon turns into a window
-// that zooms past the screen edges onto the live dashboard underneath. Plays once per browser session; Settings can
+// that zooms past the screen edges onto the live dashboard underneath. Plays on every page load; Settings can
 // replay it or switch it off.
 
 const SPEED = 1.3; // the whole opening runs this much faster than the timings written in the CSS
@@ -11,7 +11,6 @@ const CX = 1079.5;
 const CY = 927.5; // hexagon centre, the zoom origin
 const HEX = '1079.5,440 1511,689 1511,1166 1079.5,1415 648,1166 648,689';
 const TRACE = 'M1268.1 1133.65 V928.9 L1162.2 823 L1079.5 739 V440';
-const SEEN_KEY = 'rootlens.opening.seen';
 export const OPENING_OFF_KEY = 'rootlens.opening.off';
 export const REPLAY_EVENT = 'rootlens:replay-opening';
 
@@ -107,16 +106,9 @@ const read = (store, key) => {
     return null;
   }
 };
-const write = (store, key, value) => {
-  try {
-    store.setItem(key, value);
-  } catch {
-    /* private mode: the opening just plays again next time */
-  }
-};
 
 const Opening = () => {
-  const [show, setShow] = useState(() => read(localStorage, OPENING_OFF_KEY) !== '1' && read(sessionStorage, SEEN_KEY) !== '1');
+  const [show, setShow] = useState(() => read(localStorage, OPENING_OFF_KEY) !== '1');   // every page load
   const [run, setRun] = useState(0);
   const root = useRef(null);
   const svg = useRef(null);
@@ -146,10 +138,7 @@ const Opening = () => {
     let raf = 0;
     let zooming = false;
 
-    const finish = () => {
-      write(sessionStorage, SEEN_KEY, '1');
-      setShow(false);
-    };
+    const finish = () => setShow(false);
     // The hexagon turns into a window and grows until its edges are past every corner of the screen.
     const zoom = (ms) => {
       if (zooming) return;

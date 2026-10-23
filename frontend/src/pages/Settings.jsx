@@ -172,7 +172,7 @@ const AppearanceTab = () => {
           <Row title="Animations" hint="Page transitions, the sliding panels and the moving background. Your system's reduce-motion setting always wins.">
             <Toggle checked={look.motion} onChange={(motion) => setLook({ motion })} label="Animations" />
           </Row>
-          <Row title="Opening animation" hint="The RootLens logo builds, finds the fault and opens onto the dashboard. Plays once per visit.">
+          <Row title="Opening animation" hint="The RootLens logo builds, finds the fault and opens onto the dashboard. Plays every time the page loads.">
             <span className="flex items-center gap-3">
               <button type="button" onClick={() => dispatchEvent(new Event(REPLAY_EVENT))} className="btn-ghost h-9 px-3 text-sm"><Play size={14} /> Replay</button>
               <Toggle checked={opening} onChange={toggleOpening} label="Opening animation" />

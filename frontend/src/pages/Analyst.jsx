@@ -71,6 +71,16 @@ const Message = ({ m }) => {
             </div>
             {m.revised && <p className="mt-2 text-xs text-ink/55">The first draft broke a wording rule, so it was rewritten once before showing.</p>}
             <Trace trace={m.trace} />
+            {m.sources?.length > 0 && (
+              <details className="mt-2 text-xs text-ink/65">
+                <summary className="cursor-pointer font-medium">Retrieved context ({m.sources.length})</summary>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {m.sources.map((s) => (
+                    <li key={s.id}><span className="font-semibold">[{s.id}] {s.source}:</span> {s.text.length > 220 ? `${s.text.slice(0, 220)}...` : s.text}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </>
         )}
       </div>
@@ -78,8 +88,24 @@ const Message = ({ m }) => {
   );
 };
 
-const Chat = ({ provider }) => {
-  const [messages, setMessages] = useState([]);
+// Also used by the floating assistant (components/AssistantDock.jsx); `pending` asks a question handed over by another screen.
+export const Chat = ({ provider = 'auto', pending, compact = false, topic, onAnswer }) => {
+  // each topic keeps its own conversation, saved in this browser, so the assistant remembers it
+  const memoryKey = `rootlens.ai.chat.${topic?.id ?? 'line'}`;
+  const [messages, setMessages] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(memoryKey) || '[]');
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(memoryKey, JSON.stringify(messages.slice(-30)));
+    } catch {
+      // storage full or blocked: the conversation still works for this visit
+    }
+  }, [messages, memoryKey]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const end = useRef(null);
@@ -90,8 +116,14 @@ const Chat = ({ provider }) => {
     end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [messages, busy]);
 
-  const suggestions = [
+  const model = topic && topic.kind !== 'line';
+  const suggestions = model ? [
+    `What is wrong with ${topic.label} and how do we fix it?`,
+    'Which defect is the most severe, and which process step causes it?',
+    'What should we check on the line first?',
+  ] : [
     'What should we fix first and what is it worth?',
+    'What is wrong with the latest inspected part and how do we fix it?',
     'How reliable is the model?',
     lastFail === null ? 'Why did a failed run fail?' : `Why did run ${lastFail} fail?`,
     'Which station looks worst on the Bosch line?',
@@ -105,11 +137,12 @@ const Chat = ({ provider }) => {
     setInput('');
     setBusy(true);
     try {
-      const body = { question: q, history, ...(provider === 'auto' ? {} : { provider }) };
+      const body = { question: q, history, ...(provider === 'auto' ? {} : { provider }), ...(model ? { topic: topic.id } : {}) };
       const r = await post('/api/ai/ask', body, { signal: AbortSignal.timeout(AI_TIMEOUT) });
+      onAnswer?.(r);
       setMessages((cur) => [
         ...cur,
-        { role: 'assistant', content: r.answer, grounded: r.grounded, unverified: r.unverified_numbers ?? [], trace: r.trace ?? [], provider: r.provider, model: r.model, seconds: r.seconds, revised: r.revised_once },
+        { role: 'assistant', content: r.answer, grounded: r.grounded, unverified: r.unverified_numbers ?? [], trace: r.trace ?? [], sources: r.sources ?? [], provider: r.provider, model: r.model, seconds: r.seconds, revised: r.revised_once },
       ]);
     } catch (e) {
       setMessages((cur) => [...cur, { role: 'assistant', error: true, content: errorText(e) }]);
@@ -118,9 +151,13 @@ const Chat = ({ provider }) => {
     }
   };
 
+  useEffect(() => {
+    if (pending?.question) ask(pending.question);
+  }, [pending]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <section className="card flex flex-col">
-      <CardTitle sub="Answers come from RootLens tool calls. The badge says whether every number in the answer was found in the tool output.">Ask the analyst</CardTitle>
+    <section className={compact ? 'flex min-h-0 flex-1 flex-col' : 'card flex flex-col'}>
+      {!compact && <CardTitle sub="Answers come from RootLens tool calls. The badge says whether every number in the answer was found in the tool output.">Ask the analyst</CardTitle>}
 
       {messages.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink/15 p-4">
@@ -136,7 +173,7 @@ const Chat = ({ provider }) => {
           </ul>
         </div>
       ) : (
-        <ul className="flex max-h-[34rem] flex-col gap-3 overflow-y-auto pr-1" aria-live="polite">
+        <ul className={`flex flex-col gap-3 overflow-y-auto pr-1 ${compact ? 'min-h-0 flex-1' : 'max-h-[34rem]'}`} aria-live="polite">
           {messages.map((m, i) => <Message key={i} m={m} />)}
           {busy && (
             <li className="flex items-center gap-2 text-sm text-ink/60" role="status">

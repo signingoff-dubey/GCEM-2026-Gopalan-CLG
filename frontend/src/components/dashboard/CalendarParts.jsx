@@ -21,6 +21,7 @@ export const useLiveDayModel = (activity, today) =>
       if (d === todayIso) items.push({ text: 'Today', tone: 'accent' });
       const row = byDate[d];
       if (!row) return items;
+      if (row.runs) items.push({ text: `${plural(row.runs, 'run')}, ${row.fails} failed (replayed SECOM)`, tone: row.fails / row.runs >= 0.1 ? 'rose' : 'good' });
       if (row.capture) items.push({ text: plural(row.capture, 'capture'), tone: 'good' });
       if (row.inspection) items.push({ text: plural(row.inspection, 'scan inspection'), tone: 'info' });
       if (row.assembly) items.push({ text: plural(row.assembly, 'model upload'), tone: 'info' });
@@ -31,7 +32,8 @@ export const useLiveDayModel = (activity, today) =>
     const style = (d) => {
       const row = byDate[d];
       if (d === todayIso) return row ? 'bg-white text-ink font-semibold ring-2 ring-accent' : 'bg-white text-ink font-semibold';
-      if (row?.alerts) return 'bg-rose text-white font-semibold';
+      // red: something needs attention, or a production day failing at 10% or more (about 1.5x the usual rate)
+      if (row?.alerts || (row?.runs && row.fails / row.runs >= 0.1)) return 'bg-rose text-white font-semibold';
       if (row) return 'bg-info/80 text-white font-semibold';
       return 'text-white/75 hover:bg-white/10';
     };
@@ -76,16 +78,16 @@ const DayCard = ({ anchor, date, items }) => {
       animate={{ opacity: 1, scale: 1, x: left, y: top }}
       exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12 } }}
       transition={{ type: 'spring', ...GLIDE, opacity: { duration: 0.14 } }}
-      className="pointer-events-none z-[70] rounded-2xl bg-white p-3.5 text-ink shadow-2xl ring-1 ring-black/10"
+      className="popover pointer-events-none z-[70] p-3.5"
     >
       <p className="text-sm font-semibold">{longDate(date)}</p>
       {items.length === 0 ? (
-        <p className="mt-1.5 text-sm text-ink/55">No runs recorded.</p>
+        <p className="mt-1.5 text-sm text-white/55">No runs recorded.</p>
       ) : (
         <ul className="mt-1.5 flex flex-col gap-1.5">
           {items.map((it, i) => (
             <li key={i} className="flex items-start gap-2 text-sm">
-              <span className={`mt-1.5 size-2 shrink-0 rounded-full ${it.tone === 'accent' ? 'bg-ink' : DOT[it.tone]}`} />
+              <span className={`mt-1.5 size-2 shrink-0 rounded-full ${it.tone === 'accent' ? 'bg-white' : DOT[it.tone]}`} />
               {it.text}
             </li>
           ))}

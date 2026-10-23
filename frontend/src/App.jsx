@@ -1,6 +1,9 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import Backdrop from './components/Backdrop.jsx';
 import Opening from './components/Opening.jsx';
+import AssistantDock from './components/AssistantDock.jsx';
+import DataQuality from './pages/DataQuality';
+import { Tabs } from './components/ui';
 import { MotionConfig, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -22,7 +25,7 @@ import { StatusCard } from './components/ui/Gate';
 
 // The 3D viewer pulls in the GLTF loader and orbit controls, so the Inspection screen loads on demand.
 const Inspection = lazy(() => import('./pages/Inspection'));
-import { findPage, pages } from './navigation';
+import { findPage, pages, sectionOf } from './navigation';
 import { useRoute, navigate } from './lib/router';
 
 const SCREENS = {
@@ -38,6 +41,7 @@ const SCREENS = {
   analyst: Analyst,
   captures: Captures,
   inspection: Inspection,
+  data: DataQuality,
   settings: Settings,
 };
 
@@ -72,6 +76,7 @@ const App = () => {
 
   const page = findPage(slug) ?? pages.home;
   const Screen = SCREENS[page.slug];
+  const section = sectionOf(page.slug);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -97,6 +102,11 @@ const App = () => {
               animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
               transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.9 }}
             >
+              {section && section.items.length > 1 && (
+                <div className="mb-[var(--gap)]">
+                  <Tabs dark tabs={section.items.map((i) => i.label)} active={page.label} onChange={(label) => navigate(section.items.find((i) => i.label === label).slug)} />
+                </div>
+              )}
               <Suspense fallback={<StatusCard q={{ loading: true }} what="This page" />}>
                 <Screen key={param} id={param} />
               </Suspense>
@@ -106,6 +116,7 @@ const App = () => {
         </div>
 
         <RightPanel drawerOpen={summaryOpen} onCloseDrawer={closeSummary} />
+        <AssistantDock />
       </div>
     </MotionConfig>
   );
