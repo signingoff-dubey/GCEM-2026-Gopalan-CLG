@@ -3,14 +3,19 @@
 Run: uvicorn backend.api.main:app --host 0.0.0.0 --port 8000   (docs at /docs)
 """
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from backend.alerts import service as alerts
 from backend.api import service
+from backend.api.activity import router as activity_router
 from backend.api.ai_routes import router as ai_router
+from backend.api.alert_routes import router as alert_router
+from backend.api.assembly_routes import router as assembly_router
 from backend.api.capture_routes import router as capture_router
 from backend.api.compare import router as compare_router
 from backend.api.inspection_routes import router as inspection_router
@@ -19,7 +24,31 @@ from backend.config import DISCLAIMER
 from backend.ml import cost, pilot
 from backend.ml.pipeline import clean
 
-app = FastAPI(title="RootLens API", version="0.1.0")
+
+
+@asynccontextmanager
+async def lifespan(_):
+    alerts.start()      # defect alerts: call / WhatsApp / email on a new crack
+    yield
+    alerts.stop()
+
+
+app = FastAPI(title="RootLens API", version="0.1.0", lifespan=lifespan)
+JOB_PATHS = ("/api/inspection", "/api/assembly", "/api/captures")
+
+
+@app.middleware("http")
+async def _track_jobs(request, call_next):
+    """Uploads and inspections in flight hold back defect alerts until the whole batch is done."""
+    if request.method in ("POST", "PUT") and request.url.path.startswith(JOB_PATHS):
+        alerts.job_started()
+        try:
+            return await call_next(request)
+        finally:
+            alerts.job_finished()
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
@@ -147,3 +176,6 @@ app.include_router(ai_router)
 app.include_router(capture_router)
 app.include_router(inspection_router)
 app.include_router(compare_router)
+app.include_router(assembly_router)
+app.include_router(activity_router)
+app.include_router(alert_router)
