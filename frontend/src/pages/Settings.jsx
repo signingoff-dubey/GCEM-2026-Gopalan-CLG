@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Check, RotateCcw, Loader2, PlugZap } from 'lucide-react';
+import { Check, RotateCcw, Loader2, PlugZap, Play } from 'lucide-react';
 import ColorPicker from '../components/ColorPicker.jsx';
+import AlertsTab from '../components/settings/AlertsTab.jsx';
+import IntegrationsTab from '../components/settings/IntegrationsTab.jsx';
+import { OPENING_OFF_KEY, REPLAY_EVENT } from '../components/Opening.jsx';
 import { CardTitle, Field, Tabs, Toggle } from '../components/ui';
 import { ACCENTS, BACKDROPS, DEFAULTS, DENSITIES, SURFACES, TEXT_SIZES, THEMES, useAppearance } from '../lib/appearance';
 import { API_DEFAULTS, health, readApiSettings, saveApiSettings } from '../lib/api';
 
-const TABS = ['Appearance', 'Data', 'About'];
+const TABS = ['Appearance', 'Alerts', 'Integrations', 'Data', 'About'];
 
 const Choices = ({ name, options, value, onChange }) => (
   <div role="radiogroup" aria-label={name} className="flex flex-col gap-2">
@@ -67,8 +70,25 @@ const ThemeCard = ({ theme, on, onPick }) => (
 );
 
 // Saved on this device only. Changes show straight away across the whole app.
+const readOpeningOn = () => {
+  try {
+    return localStorage.getItem(OPENING_OFF_KEY) !== '1';
+  } catch {
+    return true;
+  }
+};
+
 const AppearanceTab = () => {
   const [look, setLook, reset] = useAppearance();
+  const [opening, setOpening] = useState(readOpeningOn);
+  const toggleOpening = (on) => {
+    try {
+      localStorage.setItem(OPENING_OFF_KEY, on ? '0' : '1');
+    } catch {
+      /* storage blocked: the setting lasts for this visit only */
+    }
+    setOpening(on);
+  };
   const preset = ACCENTS.find((a) => a.hex === look.accent.toLowerCase());
   const isDefault = Object.keys(DEFAULTS).every((k) => look[k] === DEFAULTS[k]);
 
@@ -151,6 +171,12 @@ const AppearanceTab = () => {
           </Row>
           <Row title="Animations" hint="Page transitions, the sliding panels and the moving background. Your system's reduce-motion setting always wins.">
             <Toggle checked={look.motion} onChange={(motion) => setLook({ motion })} label="Animations" />
+          </Row>
+          <Row title="Opening animation" hint="The RootLens logo builds, finds the fault and opens onto the dashboard. Plays once per visit.">
+            <span className="flex items-center gap-3">
+              <button type="button" onClick={() => dispatchEvent(new Event(REPLAY_EVENT))} className="btn-ghost h-9 px-3 text-sm"><Play size={14} /> Replay</button>
+              <Toggle checked={opening} onChange={toggleOpening} label="Opening animation" />
+            </span>
           </Row>
         </div>
       </section>
@@ -236,6 +262,8 @@ const Settings = () => {
     <div className="flex flex-col gap-[var(--gap)]">
       <Tabs tabs={TABS} active={tab} onChange={setTab} dark />
       {tab === 'Appearance' && <AppearanceTab />}
+      {tab === 'Alerts' && <AlertsTab />}
+      {tab === 'Integrations' && <IntegrationsTab />}
       {tab === 'Data' && <DataTab />}
       {tab === 'About' && <AboutTab />}
     </div>
