@@ -47,12 +47,24 @@ def test_preprocessor_fits_on_train_only(toy):
     train, test = X.iloc[:300], X.iloc[300:].copy()
     test["b"] = 1000.0
     pre = Preprocessor().fit(train)
-    assert pre.medians_["b"] == pytest.approx(train["b"].median())
+    lo, hi = train["b"].quantile(0.01), train["b"].quantile(0.99)
+    assert pre.means_["b"] == pytest.approx(train["b"].clip(lo, hi).mean())   # train only: test's 1000s never count
     assert "const" in pre.dropped_["constant"]
     assert "mostly_nan" in pre.dropped_["too_missing"]
     assert "some_nan" in pre.flagged_
     out = pre.transform(test)
     assert "some_nan_missing" in out and not out.isna().any().any()
+    assert out["b"].max() == pytest.approx(hi)                              # test outliers clipped to the train range
+
+
+def test_outliers_do_not_move_the_fill_value(toy):
+    X, _, _ = toy
+    train = X.iloc[:300].copy()
+    clean = Preprocessor().fit(train).means_["b"]
+    train.loc[train.index[:2], "b"] = 1e6                                   # two stuck sensor readings
+    assert Preprocessor().fit(train).means_["b"] == pytest.approx(clean, rel=0.05)
+    s = Preprocessor().fit(train).summary()
+    assert s["outliers_clipped"] > 0 and s["fitted_on"] == "train window only"
 
 
 def test_correlation_groups_merges_duplicates():

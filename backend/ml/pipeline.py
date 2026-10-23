@@ -13,8 +13,9 @@ import numpy as np
 import pandas as pd
 
 from backend.config import ARTIFACTS_DIR, BOSCH_DIR, DATA_DIR, N_BOOTSTRAP, TOP_K
-from backend.ml import cost, pilot
+from backend.ml import cost, drift, pilot
 from backend.ml.bosch import run_bosch
+from backend.ml.features import data_quality
 from backend.ml.load import load_secom, profile, time_split
 from backend.ml.planted import run_ai4i_check, run_planted_benchmark
 from backend.ml.rank import build_ranking
@@ -64,6 +65,10 @@ def run(quick: bool = False) -> dict:
     report["rolling_origin"] = rolling_origin(X, y)
     report["data_profile"] = profile(X, y, ts)
     write_json("metrics.json", report)
+    write_json("data_quality.json", data_quality(s))
+    write_json("drift.json", drift.build(s, ts, report["model_selection"]["n_estimators"],
+                                         report["model_selection"]["chosen_imputation"] != "native_nan"))
+    log("drift report and drift-aware variants written", t0)
     log(f"trained: test PR-AUC lgbm={report['lightgbm']['test']['pr_auc']['point']:.3f} "
         f"logit={report['logistic_baseline']['test']['pr_auc']['point']:.3f}", t0)
 
@@ -127,6 +132,9 @@ def run(quick: bool = False) -> dict:
             "importance": table["mean_abs_shap"].to_dict(),
             "feature_columns": list(X.columns),
         }, f)
+    from backend.ml import replay
+    write_json("replay.json", replay.build(X, y, ts, predict(model, X.reindex(columns=list(X.columns))),
+                                           report["lightgbm"]["test"]["threshold"], windows["windows"]))
     write_json("config.json", {
         "quick": quick, "n_bootstrap": B, "top_k": TOP_K,
         "created": pd.Timestamp.now().isoformat(), "seconds": time.time() - t0,

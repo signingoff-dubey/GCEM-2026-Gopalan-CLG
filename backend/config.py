@@ -1,8 +1,10 @@
 """Paths and global constants."""
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data"
+# Cloud Functions can only write to /tmp; ROOTLENS_DATA_DIR points the working data there.
+DATA_DIR = Path(os.getenv("ROOTLENS_DATA_DIR") or ROOT / "data")
 SECOM_DIR = DATA_DIR / "secom"
 SECOM_ZIP = ROOT / "datasets" / "secom.zip"
 BOSCH_DIR = DATA_DIR / "bosch"
@@ -27,6 +29,7 @@ SPLIT_FRACTIONS = (0.70, 0.15, 0.15)
 # missing-data thresholds
 MAX_MISSING_FRAC = 0.60
 FLAG_MISSING_FRAC = 0.05
+CLIP_PCT = 1.0          # outliers: clip to the train 1st..99th percentile
 
 # ranking
 N_BOOTSTRAP = 50
