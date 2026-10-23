@@ -76,7 +76,9 @@ def plan_for_window(feature: str, window_entry: dict, **kw) -> dict:
     else:
         summary = f"No pilot sized for {feature}: the central estimate shows no reduction."
     return {"feature": feature, "window": window_entry["window"], "scenarios": scenarios,
-            "summary": summary, "label": "pilot design; confirms or rejects the suspected effect"}
+            "summary": summary, "recommended": bool(window_entry.get("recommended")),
+            "window_status": window_entry.get("status"),
+            "label": "pilot design; confirms or rejects the suspected effect"}
 
 
 def detectable_rate(p_control: float, budget_per_arm: int, alpha=0.05, power=0.80) -> float:
