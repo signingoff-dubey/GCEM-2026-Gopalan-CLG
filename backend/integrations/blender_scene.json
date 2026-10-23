@@ -1,0 +1,178 @@
+{
+ "file": "semiconductor_internal_fault.blend",
+ "scene": "Scene",
+ "objects": 313,
+ "meshes": 308,
+ "defects": [
+  {
+   "name": "DieCrack",
+   "type": "die crack",
+   "severity": 0.9,
+   "part": "Silicon die",
+   "center": [
+    0.5286,
+    -0.1691,
+    0.9415
+   ],
+   "size": [
+    1.9577,
+    2.3624,
+    0.0266
+   ],
+   "material": "Black"
+  },
+  {
+   "name": "WireStub0_4",
+   "type": "broken bond wire",
+   "severity": 0.8,
+   "part": "Bond wire 0-4, pad side",
+   "center": [
+    2.0417,
+    0.258,
+    0.8874
+   ],
+   "size": [
+    1.389,
+    0.2517,
+    0.6257
+   ],
+   "material": "Gold"
+  },
+  {
+   "name": "WireRemnant0_4",
+   "type": "broken bond wire",
+   "severity": 0.8,
+   "part": "Bond wire 0-4, lead side",
+   "center": [
+    3.3328,
+    0.376,
+    0.7722
+   ],
+   "size": [
+    0.4695,
+    0.1037,
+    0.3458
+   ],
+   "material": "Gold"
+  },
+  {
+   "name": "Scorch0",
+   "type": "burn mark",
+   "severity": 0.7,
+   "part": "Die surface near pad row 0",
+   "center": [
+    0.906,
+    0.0123,
+    0.946
+   ],
+   "size": [
+    0.9991,
+    0.7224,
+    0.0663
+   ],
+   "material": "Scorch"
+  },
+  {
+   "name": "DieCrackB1",
+   "type": "die crack",
+   "severity": 0.7,
+   "part": "Silicon die, branch 1",
+   "center": [
+    0.2336,
+    0.4488,
+    0.9415
+   ],
+   "size": [
+    1.0175,
+    0.9676,
+    0.019
+   ],
+   "material": "Black"
+  },
+  {
+   "name": "DieCrackB2",
+   "type": "die crack",
+   "severity": 0.7,
+   "part": "Silicon die, branch 2",
+   "center": [
+    0.7104,
+    -1.0457,
+    0.9415
+   ],
+   "size": [
+    0.9266,
+    0.6447,
+    0.019
+   ],
+   "material": "Black"
+  },
+  {
+   "name": "DieCrackB3",
+   "type": "die crack",
+   "severity": 0.7,
+   "part": "Silicon die, branch 3",
+   "center": [
+    -0.7477,
+    -0.8343,
+    0.9415
+   ],
+   "size": [
+    1.3861,
+    0.3145,
+    0.0171
+   ],
+   "material": "Black"
+  },
+  {
+   "name": "WireLift2_3",
+   "type": "lifted bond wire",
+   "severity": 0.6,
+   "part": "Bond wire 2-3",
+   "center": [
+    -2.2297,
+    0.255,
+    1.1481
+   ],
+   "size": [
+    1.7746,
+    0.2457,
+    0.4276
+   ],
+   "material": "Gold"
+  },
+  {
+   "name": "Scorch1",
+   "type": "burn mark",
+   "severity": 0.6,
+   "part": "Die surface near pad row 1",
+   "center": [
+    0.939,
+    0.1248,
+    0.9396
+   ],
+   "size": [
+    0.8501,
+    0.6652,
+    0.0666
+   ],
+   "material": "Scorch"
+  },
+  {
+   "name": "ScorchLead",
+   "type": "burn mark",
+   "severity": 0.5,
+   "part": "Inner lead 0-4",
+   "center": [
+    -3.55,
+    0.4,
+    0.614
+   ],
+   "size": [
+    0.44,
+    0.44,
+    0.0044
+   ],
+   "material": "Scorch"
+  }
+ ]
+}
