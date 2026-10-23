@@ -87,18 +87,52 @@ def keys_for(provider: str) -> list[str]:
 
 
 _key_cursor: dict[tuple[str, str], int] = {}
+# Per key and model: tokens left this minute and when the bucket refills (from Groq / OpenRouter rate-limit headers).
+# Groq's free tier allows 8k tokens a minute per key and one answer uses 5-9k, so calls go to the key with the most
+# budget left instead of draining one key until it returns 429.
+_budget: dict[tuple[str, str], tuple[float, float]] = {}
+_model_in_flight: contextvars.ContextVar[str] = contextvars.ContextVar("rootlens_model", default="")
+
+
+def _seconds(v: str | None) -> float:
+    """'7.66s', '1m26.4s', '120ms' -> seconds."""
+    if not v:
+        return 60.0
+    m = re.fullmatch(r"(?:(\d+)m(?!s))?(?:([\d.]+)s)?(?:([\d.]+)ms)?", v.strip())
+    if not m:
+        return 60.0
+    return float(m.group(1) or 0) * 60 + float(m.group(2) or 0) + float(m.group(3) or 0) / 1000
+
+
+def _left(key: str) -> float:
+    rem, refill = _budget.get((key, _model_in_flight.get()), (float("inf"), 0.0))
+    return float("inf") if time.time() >= refill else rem
 
 
 def _current_key(provider: str) -> str:
     keys = keys_for(provider)
     if not keys:
         raise LLMError(f"{provider.upper()}_API_KEY not set")
-    return keys[_key_cursor.get((provider, client.get()), 0) % len(keys)]
+    start = _key_cursor.get((provider, client.get()), 0) % len(keys)
+    ordered = keys[start:] + keys[:start]          # ties keep the rotation order
+    return max(ordered, key=_left)
 
 
 def _rotate(provider: str) -> None:
+    """The current key is out of budget: mark it empty for a minute and move on."""
+    key = _current_key(provider)
+    _budget[(key, _model_in_flight.get())] = (0.0, time.time() + 60)
     k = (provider, client.get())
     _key_cursor[k] = _key_cursor.get(k, 0) + 1
+
+
+def _note_budget(key: str, headers) -> None:
+    rem = headers.get("x-ratelimit-remaining-tokens")
+    if rem is not None:
+        try:
+            _budget[(key, _model_in_flight.get())] = (float(rem), time.time() + _seconds(headers.get("x-ratelimit-reset-tokens")))
+        except ValueError:
+            pass
 
 
 def available() -> dict:
@@ -145,6 +179,7 @@ def _openai_compat(provider, messages, tools, model, json_mode, temperature, max
     r = httpx.post(OPENAI_COMPAT[provider], json=body, timeout=TIMEOUT,
                    headers={"Authorization": f"Bearer {key}"})
     dt = time.time() - t0
+    _note_budget(key, r.headers)
     if r.status_code != 200:
         raise LLMError(f"{provider} {r.status_code}: {r.text[:300]}")
     j = r.json()
@@ -249,8 +284,12 @@ def chat(messages, tools=None, provider="groq", model=None, json_mode=False,
     A malformed tool call from the model is sampled again (twice at most) before giving up."""
     n_keys = max(1, len(keys_for(provider)))
     rotations, attempt, resamples = 0, 0, 0
+    _model_in_flight.set(model or model_for(provider))
     while True:
         try:
+            if provider == "gemini":   # no rate-limit headers: spread calls round-robin across the keys
+                k = (provider, client.get())
+                _key_cursor[k] = _key_cursor.get(k, 0) + 1
             return _BACKENDS[provider](messages, tools, model or model_for(provider), json_mode,
                                        temperature if resamples == 0 else max(temperature, 0.4), max_tokens)
         except LLMError as e:
@@ -313,7 +352,7 @@ def chat_with_fallback(messages, tools=None, order=None, pinned=None, **kw) -> R
     `order` restricts to providers (e.g. ('groq',)); default is the 'text' chain."""
     if pinned:
         try:
-            return chat(messages, tools, provider=pinned[0], model=pinned[1], **kw)
+            return chat(messages, tools, provider=pinned[0], model=pinned[1], **{"retries": 0, "max_wait": 2.0, **kw})
         except (LLMError, httpx.HTTPError):
             pass   # the pinned model failed mid-conversation: carry on with the chain rather than fail the answer
     if order:
@@ -327,3 +366,31 @@ def chat_with_fallback(messages, tools=None, order=None, pinned=None, **kw) -> R
         raise LLMError("all providers failed: " + " | ".join(errors))
     reply, _ = run_chain("text", messages, tools, **kw)
     return reply
+
+
+# ---------------- speech to text ----------------
+
+STT_MODEL = "whisper-large-v3-turbo"
+
+
+def transcribe(audio: bytes, filename: str, language: str | None = None) -> dict:
+    """Speech to text with Groq Whisper (English, Hindi, Kannada and more), rotating keys on a rate limit."""
+    keys = keys_for("groq")
+    if not keys:
+        raise LLMError("GROQ_API_KEY not set")
+    last = ""
+    for _ in range(len(keys)):
+        key = _current_key("groq")
+        data = {"model": STT_MODEL, "response_format": "json", "temperature": "0"}
+        if language:
+            data["language"] = language
+        t0 = time.time()
+        r = httpx.post("https://api.groq.com/openai/v1/audio/transcriptions", headers={"Authorization": f"Bearer {key}"},
+                       data=data, files={"file": (filename, audio)}, timeout=TIMEOUT)
+        if r.status_code == 200:
+            return {"text": (r.json().get("text") or "").strip(), "model": STT_MODEL, "seconds": round(time.time() - t0, 2)}
+        last = f"groq {r.status_code}: {r.text[:200]}"
+        if r.status_code not in (401, 403, 429):
+            break
+        _rotate("groq")
+    raise LLMError(last)

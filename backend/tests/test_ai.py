@@ -176,3 +176,19 @@ def test_conversation_is_shared_between_clients(monkeypatch, tmp_path):
     msgs = c.get("/api/ai/chat").json()["messages"]
     assert [m["client"] for m in msgs] == ["app", "app", "web", "web"]
     assert c.delete("/api/ai/chat").json()["deleted"] == 4 and c.get("/api/ai/chat").json()["messages"] == []
+
+
+def test_transcribe_endpoint_passes_language_and_client(monkeypatch):
+    from fastapi.testclient import TestClient
+    from backend.api.main import app
+    seen = {}
+
+    def fake(audio, filename, language):
+        seen.update(audio=audio, filename=filename, language=language, client=llm.client.get())
+        return {"text": "how did this month compare", "model": "whisper", "seconds": 0.1}
+    monkeypatch.setattr(llm, "transcribe", fake)
+    c = TestClient(app)
+    r = c.post("/api/ai/transcribe", files={"file": ("speech.webm", b"abc")}, data={"language": "kn"}, headers={"X-RootLens-Client": "android"})
+    assert r.status_code == 200 and r.json()["text"].startswith("how")
+    assert seen == {"audio": b"abc", "filename": "speech.webm", "language": "kn", "client": "app"}
+    assert c.post("/api/ai/transcribe", files={"file": ("s.webm", b"x")}, data={"language": "fr"}).status_code == 422

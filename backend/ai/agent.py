@@ -73,7 +73,7 @@ def ask(question: str, provider: str | None = None, history: list | None = None,
             trace.append({"tool": c["name"], "args": c["args"], "ms": round(dt * 1000),
                           "preview": tools.dumps(res)[:300]})
             messages.append({"role": "tool", "tool_call_id": c["id"], "name": c["name"],
-                             "content": tools.dumps(res)})
+                             "content": _for_model(tools.dumps(res))})
 
     answer = (reply.content or "").strip() if reply else ""
     if not answer and evidence:   # some models stop after the tool call with no text: ask once for the answer
@@ -107,6 +107,15 @@ def ask(question: str, provider: str | None = None, history: list | None = None,
         "seconds": round(time.time() - t_start, 2),
         "label": "AI summary of RootLens results; numbers are checked against tool outputs.",
     }
+
+
+# Tool results are resent on every step of an answer and Groq allows 8k tokens a minute per key, so each result is
+# capped for the model. The guard still checks the answer's numbers against the full results.
+TOOL_CHARS = 4000
+
+
+def _for_model(text: str) -> str:
+    return text if len(text) <= TOOL_CHARS else text[:TOOL_CHARS] + ' ..."(trimmed; ask a narrower question for the rest)"'
 
 
 def _final_text(messages, pinned) -> str:

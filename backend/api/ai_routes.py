@@ -1,5 +1,5 @@
 """AI endpoints: grounded Q&A agent and one-click investigation."""
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
@@ -66,6 +66,27 @@ def chat_history(topic: str | None = Query(None, max_length=40), limit: int = Qu
 @router.delete("/chat")
 def chat_clear(topic: str | None = Query(None, max_length=40)):
     return {"deleted": chats.clear(topic)}
+
+
+@router.post("/transcribe")
+async def transcribe(file: UploadFile = File(...), language: str | None = Form(None),
+                     x_rootlens_client: str | None = Header(None)):
+    """Speech to text for the assistant's mic (web; the app can use it too). Audio is not stored."""
+    if language and language not in ("en", "hi", "kn"):
+        raise HTTPException(422, "language must be en, hi or kn")
+    audio = await file.read()
+    if not audio:
+        raise HTTPException(422, "empty audio")
+    if len(audio) > 20 * 1024 * 1024:
+        raise HTTPException(413, "audio too long (max 20 MB)")
+
+    def run():
+        llm.client.set(_client(x_rootlens_client))
+        return llm.transcribe(audio, file.filename or "speech.webm", language)
+    try:
+        return await run_in_threadpool(run)
+    except llm.LLMError as e:
+        raise HTTPException(502, str(e))
 
 
 class InvestigateRequest(BaseModel):
