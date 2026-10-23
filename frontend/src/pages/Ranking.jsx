@@ -5,6 +5,7 @@ import { num } from '../lib/format';
 import { StableChip } from './Overview';
 import Gate from '../components/ui/Gate';
 import { navigate } from '../lib/router';
+import { isRecommended } from '../components/RunResult';
 import { useApi } from '../lib/useApi';
 
 const AXIS_MAX = 60; // rank axis: 1 (best) to 60; anything ranked lower is drawn at the right edge
@@ -26,7 +27,7 @@ const RankBar = ({ r }) => {
 
 const Detail = ({ r, ranking, windows }) => {
   const w = windows.find((s) => s.feature === r.feature);
-  const recommended = w?.status === 'recommended';
+  const recommended = Boolean(w) && isRecommended(w);
   const members = ranking.groups.find((g) => g.group === r.group)?.features ?? [];
   const peers = members.filter((f) => f !== r.feature);
   const shown = peers.slice(0, 6);

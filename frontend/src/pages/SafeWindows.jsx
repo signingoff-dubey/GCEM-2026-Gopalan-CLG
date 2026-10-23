@@ -3,13 +3,14 @@ import { Banner, CardTitle, Tabs } from '../components/ui';
 import Gate from '../components/ui/Gate';
 import { num, pct } from '../lib/format';
 import { navigate } from '../lib/router';
+import { isRecommended } from '../components/RunResult';
 import { useApi } from '../lib/useApi';
 
 // API window -> the shape the cards below draw. bound is the observed operating range (p5 to p95).
 const adapt = (x) => ({
   feature: x.feature,
   status: x.status,
-  recommended: x.status === 'recommended',
+  recommended: isRecommended(x),
   bound: x.operating_range,
   median: x.current_median,
   window: x.window,
