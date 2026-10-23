@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.local
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# data and generated outputs
+data/
+artifacts/
+captures/
+*.db
+*.log
+
+# docs stay local; only README is published
+*.md
+!README.md
+*.txt
+!requirements.txt
+
+# os / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+dist/
+build/
+.claude/
