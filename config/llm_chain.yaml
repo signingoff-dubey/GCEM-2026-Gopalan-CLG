@@ -1,0 +1,19 @@
+# Provider failover order. Entries whose provider has no API key in .env are skipped.
+# Re-run `python -m scripts.probe_models` before a demo and drop IDs that fail.
+
+# Reading digits off a process-sheet photo. The model only transcribes numbers.
+# probe 2026-10-23: all four read 13/13 values; ordered by latency (1.8 s, 2.0 s, 2.4 s, 16 s)
+vision:
+  - {provider: groq, model: qwen/qwen3.8-27b, max_tokens: 2048}
+  - {provider: gemini, model: gemini-flash-lite-latest, max_tokens: 2048}
+  - {provider: gemini, model: gemini-3.5-flash-lite, max_tokens: 2048}
+  - {provider: openrouter, model: nvidia/nemotron-3.5-super-vl:free, max_tokens: 2048}
+
+# Analyst agent and investigation brief. Phrases numbers the pipeline already computed.
+# benchmark 2026-10-23 (summary, tool use, JSON, honesty bait; pass / median latency):
+# gpt-oss-20b 8/8 1.9 s, qwen3.8-27b 6/8 1.0 s, gpt-oss-120b 4/8 2.5 s, gemini flash-lite 4/8 1.7 s
+text:
+  - {provider: groq, model: openai/gpt-oss-20b, max_tokens: 3000}
+  - {provider: groq, model: qwen/qwen3.8-27b, max_tokens: 3000}
+  - {provider: groq, model: openai/gpt-oss-120b, max_tokens: 3000}
+  - {provider: gemini, model: gemini-flash-lite-latest, max_tokens: 3000}
