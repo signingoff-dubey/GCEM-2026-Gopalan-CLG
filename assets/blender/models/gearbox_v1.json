@@ -1,0 +1,85 @@
+{
+ "family": "gearbox",
+ "variant": 1,
+ "fault_types": [
+  "fracture",
+  "leak",
+  "overheating",
+  "scoring"
+ ],
+ "n_fault_objects": 12,
+ "faults": [
+  {
+   "object": "Housing_Seam_Leak",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Housing_LeakPuddle",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Housing_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Housing_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Housing_LeakDrop2",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Gear_Tooth_Broken",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Gear_ToothBreak",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Gear_ToothFragment",
+   "damage_type": "fracture",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "Output_ScoredRing0",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Output_ScoredRing1",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Output_ScoredRing2",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Bearing_Overheated_Out",
+   "damage_type": "overheating",
+   "severity": 0.7,
+   "marker": false
+  }
+ ]
+}

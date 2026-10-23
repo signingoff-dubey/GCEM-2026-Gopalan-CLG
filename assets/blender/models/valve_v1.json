@@ -1,0 +1,121 @@
+{
+ "family": "valve",
+ "variant": 1,
+ "fault_types": [
+  "crack",
+  "leak",
+  "pitting",
+  "tear"
+ ],
+ "n_fault_objects": 18,
+ "faults": [
+  {
+   "object": "Ball_Pit0",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit2",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit3",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit4",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit5",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit6",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit7",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Ball_Pit8",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Seat_TornSeal",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Seat_Tear0",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seat_Tear1",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seat_Tear2",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Neck_LeakPuddle",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Neck_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Neck_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Handle_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Handle_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  }
+ ]
+}

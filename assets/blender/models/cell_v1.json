@@ -1,0 +1,85 @@
+{
+ "family": "cell",
+ "variant": 1,
+ "fault_types": [
+  "burn",
+  "leak",
+  "swelling",
+  "tear"
+ ],
+ "n_fault_objects": 12,
+ "faults": [
+  {
+   "object": "Can_Swollen",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "Jelly_Burnt_Layer",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Jelly_Scorch0",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Jelly_Scorch1",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Jelly_Scorch2",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Vent_Torn",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Vent_Tear0",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Vent_Tear1",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Vent_Tear2",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Cap_LeakPuddle",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Cap_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Cap_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  }
+ ]
+}

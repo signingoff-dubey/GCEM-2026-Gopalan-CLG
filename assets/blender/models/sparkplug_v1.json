@@ -1,0 +1,90 @@
+{
+ "family": "sparkplug",
+ "variant": 1,
+ "fault_types": [
+  "burn",
+  "crack",
+  "overheating"
+ ],
+ "n_fault_objects": 13,
+ "faults": [
+  {
+   "object": "Insulator_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Insulator_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Insulator_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Shell_Soot0",
+   "damage_type": "burn",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Shell_Soot1",
+   "damage_type": "burn",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Shell_Soot2",
+   "damage_type": "burn",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Shell_Soot3",
+   "damage_type": "burn",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Electrode_Overheated_Ground",
+   "damage_type": "overheating",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Electrode_OverheatedTipBlob",
+   "damage_type": "overheating",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Terminal_Nut_Burnt",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Terminal_Scorch0",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Terminal_Scorch1",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Terminal_Scorch2",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  }
+ ]
+}

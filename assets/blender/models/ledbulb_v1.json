@@ -1,0 +1,72 @@
+{
+ "family": "ledbulb",
+ "variant": 1,
+ "fault_types": [
+  "burn",
+  "crack",
+  "swelling"
+ ],
+ "n_fault_objects": 10,
+ "faults": [
+  {
+   "object": "Capacitor_Bulged_0",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "Capacitor_BulgedTop_0",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "Driver_Scorch0",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Driver_Scorch1",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Driver_Scorch2",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "LED_Burnt_4",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "LED_Scorch4",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Dome_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Dome_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Dome_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  }
+ ]
+}

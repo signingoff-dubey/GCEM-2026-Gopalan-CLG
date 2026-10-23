@@ -1,0 +1,97 @@
+{
+ "family": "watch",
+ "variant": 1,
+ "fault_types": [
+  "crack",
+  "fracture",
+  "leak",
+  "pitting"
+ ],
+ "n_fault_objects": 14,
+ "faults": [
+  {
+   "object": "Gear_Pitted_1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Gear_Pit0",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Gear_Pit1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Gear_Pit2",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Gear_Pit3",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Gear_Pit4",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Dial_Residue",
+   "damage_type": "leak",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Dial_ResidueB",
+   "damage_type": "leak",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Hand_Minute_Broken",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Hand_MinuteBreak",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Hand_MinuteFragment",
+   "damage_type": "fracture",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "Crystal_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Crystal_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Crystal_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  }
+ ]
+}

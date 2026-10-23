@@ -1,0 +1,79 @@
+{
+ "family": "motor",
+ "variant": 1,
+ "fault_types": [
+  "burn",
+  "crack",
+  "lifted lead",
+  "scoring"
+ ],
+ "n_fault_objects": 11,
+ "faults": [
+  {
+   "object": "Terminal_Lead_Lifted",
+   "damage_type": "lifted lead",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Winding_Burnt_3",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Winding_Scorch0",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Winding_Scorch1",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Winding_Scorch2",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Rotor_ScoredRing0",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_ScoredRing1",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_ScoredRing2",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "EndCap_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "EndCap_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "EndCap_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  }
+ ]
+}

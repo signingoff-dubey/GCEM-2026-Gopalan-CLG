@@ -1,0 +1,308 @@
+{
+ "tagged": {
+  "objects_tp": 136,
+  "objects_fp": 0,
+  "objects_fn": 0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "files_with_fault_flagged": 10,
+  "files": 10,
+  "by_family": {
+   "brake": {
+    "tp": 17,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "cell": {
+    "tp": 12,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "gearbox": {
+    "tp": 12,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "hydraulic": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "ledbulb": {
+    "tp": 10,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "motor": {
+    "tp": 11,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "padlock": {
+    "tp": 15,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "sparkplug": {
+    "tp": 13,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "valve": {
+    "tp": 18,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "watch": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   }
+  },
+  "per_file": [
+   {
+    "file": "brake_v1",
+    "truth": 17,
+    "found": 17,
+    "tp": 17,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "cell_v1",
+    "truth": 12,
+    "found": 12,
+    "tp": 12,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "gearbox_v1",
+    "truth": 12,
+    "found": 12,
+    "tp": 12,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "hydraulic_v1",
+    "truth": 14,
+    "found": 14,
+    "tp": 14,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "ledbulb_v1",
+    "truth": 10,
+    "found": 10,
+    "tp": 10,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "motor_v1",
+    "truth": 11,
+    "found": 11,
+    "tp": 11,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "padlock_v1",
+    "truth": 15,
+    "found": 15,
+    "tp": 15,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "sparkplug_v1",
+    "truth": 13,
+    "found": 13,
+    "tp": 13,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "valve_v1",
+    "truth": 18,
+    "found": 18,
+    "tp": 18,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "watch_v1",
+    "truth": 14,
+    "found": 14,
+    "tp": 14,
+    "fp": 0,
+    "fn": 0
+   }
+  ]
+ },
+ "stripped": {
+  "objects_tp": 70,
+  "objects_fp": 46,
+  "objects_fn": 66,
+  "precision": 0.603448275862069,
+  "recall": 0.5147058823529411,
+  "files_with_fault_flagged": 10,
+  "files": 10,
+  "by_family": {
+   "brake": {
+    "tp": 13,
+    "fp": 6,
+    "fn": 4,
+    "recall": 0.7647058823529411
+   },
+   "cell": {
+    "tp": 7,
+    "fp": 3,
+    "fn": 5,
+    "recall": 0.5833333333333334
+   },
+   "gearbox": {
+    "tp": 1,
+    "fp": 6,
+    "fn": 11,
+    "recall": 0.08333333333333333
+   },
+   "hydraulic": {
+    "tp": 6,
+    "fp": 0,
+    "fn": 8,
+    "recall": 0.42857142857142855
+   },
+   "ledbulb": {
+    "tp": 8,
+    "fp": 6,
+    "fn": 2,
+    "recall": 0.8
+   },
+   "motor": {
+    "tp": 8,
+    "fp": 4,
+    "fn": 3,
+    "recall": 0.7272727272727273
+   },
+   "padlock": {
+    "tp": 5,
+    "fp": 4,
+    "fn": 10,
+    "recall": 0.3333333333333333
+   },
+   "sparkplug": {
+    "tp": 11,
+    "fp": 3,
+    "fn": 2,
+    "recall": 0.8461538461538461
+   },
+   "valve": {
+    "tp": 7,
+    "fp": 1,
+    "fn": 11,
+    "recall": 0.3888888888888889
+   },
+   "watch": {
+    "tp": 4,
+    "fp": 13,
+    "fn": 10,
+    "recall": 0.2857142857142857
+   }
+  },
+  "per_file": [
+   {
+    "file": "brake_v1",
+    "truth": 17,
+    "found": 19,
+    "tp": 13,
+    "fp": 6,
+    "fn": 4
+   },
+   {
+    "file": "cell_v1",
+    "truth": 12,
+    "found": 10,
+    "tp": 7,
+    "fp": 3,
+    "fn": 5
+   },
+   {
+    "file": "gearbox_v1",
+    "truth": 12,
+    "found": 7,
+    "tp": 1,
+    "fp": 6,
+    "fn": 11
+   },
+   {
+    "file": "hydraulic_v1",
+    "truth": 14,
+    "found": 6,
+    "tp": 6,
+    "fp": 0,
+    "fn": 8
+   },
+   {
+    "file": "ledbulb_v1",
+    "truth": 10,
+    "found": 14,
+    "tp": 8,
+    "fp": 6,
+    "fn": 2
+   },
+   {
+    "file": "motor_v1",
+    "truth": 11,
+    "found": 12,
+    "tp": 8,
+    "fp": 4,
+    "fn": 3
+   },
+   {
+    "file": "padlock_v1",
+    "truth": 15,
+    "found": 9,
+    "tp": 5,
+    "fp": 4,
+    "fn": 10
+   },
+   {
+    "file": "sparkplug_v1",
+    "truth": 13,
+    "found": 14,
+    "tp": 11,
+    "fp": 3,
+    "fn": 2
+   },
+   {
+    "file": "valve_v1",
+    "truth": 18,
+    "found": 8,
+    "tp": 7,
+    "fp": 1,
+    "fn": 11
+   },
+   {
+    "file": "watch_v1",
+    "truth": 14,
+    "found": 17,
+    "tp": 4,
+    "fp": 13,
+    "fn": 10
+   }
+  ]
+ }
+}

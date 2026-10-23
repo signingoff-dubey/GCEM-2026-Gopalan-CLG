@@ -1,0 +1,102 @@
+{
+ "family": "padlock",
+ "variant": 1,
+ "fault_types": [
+  "crack",
+  "fracture",
+  "pitting"
+ ],
+ "n_fault_objects": 15,
+ "faults": [
+  {
+   "object": "Body_Pit0",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit2",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit3",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit4",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit5",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit6",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Body_Pit7",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Shackle_Cracked",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Shackle_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Shackle_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Pin_Broken_2",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Pin_BrokenFace_2",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Pin_Fragment_2",
+   "damage_type": "fracture",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "Spring_Broken_2",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  }
+ ]
+}

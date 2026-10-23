@@ -1,0 +1,117 @@
+{
+ "family": "brake",
+ "variant": 1,
+ "fault_types": [
+  "burn",
+  "crack",
+  "debris",
+  "leak",
+  "scoring",
+  "tear"
+ ],
+ "n_fault_objects": 17,
+ "faults": [
+  {
+   "object": "Rotor_ScoredGroove0",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_ScoredGroove1",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_ScoredGroove2",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_ScoredGroove3",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Rotor_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Rotor_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Hub_Debris0",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Hub_Debris1",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Hub_Debris2",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Caliper_Seal_Torn",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Caliper_LeakPuddle",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Caliper_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Caliper_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Pad_Inner_Burnt",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "Pad_Scorch0",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Pad_Scorch1",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Pad_Scorch2",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  }
+ ]
+}
