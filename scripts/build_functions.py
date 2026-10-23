@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FN = ROOT / "functions"
-ENV_KEYS = ("GROQ_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "OPENROUTER_VISION_MODEL", "SARVAM_",
+ENV_KEYS = ("GROQ_API_KEY", "GEMINI_API_KEY", "GROQ_APP_", "GEMINI_APP_", "OPENROUTER_API_KEY", "OPENROUTER_VISION_MODEL", "SARVAM_",
             "ALERT_", "TWILIO_", "SMTP_")
 SKIP = shutil.ignore_patterns("__pycache__", "*.pyc", "tests")
 

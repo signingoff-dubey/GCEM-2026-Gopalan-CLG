@@ -1,9 +1,9 @@
 """AI endpoints: grounded Q&A agent and one-click investigation."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
-from backend.ai import agent, llm, orchestrator
+from backend.ai import agent, chats, llm, orchestrator
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -29,12 +29,43 @@ class AskRequest(BaseModel):
     topic: str | None = Field(None, max_length=40, description="a saved model or scan id the conversation is about")
 
 
-@router.post("/ask")
-async def ask(req: AskRequest):
+def _client(header: str | None) -> str:
+    return "app" if (header or "").lower() in ("android", "app") else "web"
+
+
+def _ask_as(client: str, req: AskRequest) -> dict:
+    """Runs in a worker thread: the client tag picks the API keys (the app has its own) and is saved with the turn."""
+    llm.client.set(client)
+    # earlier turns: what the client sent, else the shared conversation (asked on the web or the phone)
+    turns = req.history or [{"role": m["role"], "content": m["content"]} for m in chats.history(req.topic, 8)]
+    question = chats.message("user", req.question, client)
+    out = agent.ask(req.question, req.provider, agent.history_from(turns), req.topic)
     try:
-        return await run_in_threadpool(agent.ask, req.question, req.provider, agent.history_from(req.history), req.topic)
+        chats.append(req.topic, question, chats.message(
+            "assistant", out["answer"], client, grounded=out["grounded"], provider=out["provider"], model=out["model"],
+            sources=[h["id"] for h in out.get("sources", [])]))
+    except Exception:  # noqa: BLE001 - the answer still goes back if saving the conversation fails
+        pass
+    return out
+
+
+@router.post("/ask")
+async def ask(req: AskRequest, x_rootlens_client: str | None = Header(None)):
+    try:
+        return await run_in_threadpool(_ask_as, _client(x_rootlens_client), req)
     except llm.LLMError as e:
         raise HTTPException(502, str(e))
+
+
+@router.get("/chat")
+def chat_history(topic: str | None = Query(None, max_length=40), limit: int = Query(60, ge=1, le=200)):
+    """The shared conversation for a topic, oldest first (web and app read the same one)."""
+    return {"topic": topic or "line", "messages": chats.history(topic, limit)}
+
+
+@router.delete("/chat")
+def chat_clear(topic: str | None = Query(None, max_length=40)):
+    return {"deleted": chats.clear(topic)}
 
 
 class InvestigateRequest(BaseModel):

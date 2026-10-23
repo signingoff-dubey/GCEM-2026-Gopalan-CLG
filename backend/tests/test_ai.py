@@ -81,6 +81,48 @@ def test_chain_skips_failures_and_logs(monkeypatch):
     assert reply.provider == "gemini" and [s["ok"] for s in log] == [False, True]
 
 
+TOOL_USE_FAILED = ('groq 400: {"error":{"message":"Failed to parse tool call arguments as JSON",'
+                   '"type":"invalid_request_error","code":"tool_use_failed"}}')
+
+
+def test_malformed_tool_call_is_sampled_again(monkeypatch):
+    calls = []
+
+    def backend(messages, tools, model, json_mode, temperature, max_tokens):
+        calls.append(temperature)
+        if len(calls) == 1:
+            raise llm.LLMError(TOOL_USE_FAILED)
+        return llm.Reply("ok", [], "groq", model)
+    monkeypatch.setitem(llm._BACKENDS, "groq", backend)
+    assert llm.chat([], provider="groq", model="m").content == "ok"
+    assert len(calls) == 2 and calls[1] >= 0.4
+
+
+def test_refused_key_rotates_to_next(monkeypatch):
+    monkeypatch.setattr(llm, "keys_for", lambda p: ["k1", "k2"])
+    seen = []
+
+    def backend(*a):
+        seen.append(llm._current_key("groq"))
+        if len(seen) == 1:
+            raise llm.LLMError("groq 401: invalid api key")
+        return llm.Reply("ok", [], "groq", "m")
+    monkeypatch.setitem(llm._BACKENDS, "groq", backend)
+    assert llm.chat([], provider="groq", model="m").content == "ok"
+    assert seen[0] != seen[1]
+
+
+def test_pinned_model_failure_falls_back_to_chain(monkeypatch):
+    monkeypatch.setattr(llm, "chain", lambda task: [{"provider": "gemini", "model": "b"}])
+
+    def fake_chat(messages, tools=None, provider=None, model=None, **kw):
+        if provider == "groq":
+            raise llm.LLMError(TOOL_USE_FAILED)
+        return llm.Reply("answer", [], provider, model)
+    monkeypatch.setattr(llm, "chat", fake_chat)
+    assert llm.chat_with_fallback([], pinned=("groq", "a")).provider == "gemini"
+
+
 def test_chain_validation_moves_on(monkeypatch):
     monkeypatch.setattr(llm, "chain", lambda task: [{"provider": "groq", "model": "a"},
                                                    {"provider": "openrouter", "model": "b"}])
@@ -97,3 +139,40 @@ def test_rag_retrieves_the_right_passages():
     assert rag.retrieve("what should we change on the line")[0]["source"].startswith("corrective window")
     msg, hits = rag.context_message("why does a die crack")
     assert "[S1]" in msg["content"] and any("die crack" in h["source"] for h in hits)
+
+
+def test_app_keys_come_first_for_the_app_only(monkeypatch):
+    for i in range(2, 10):
+        monkeypatch.delenv(f"GROQ_API_KEY_{i}", raising=False)
+        monkeypatch.delenv(f"GROQ_APP_API_KEY_{i}", raising=False)
+    monkeypatch.setenv("GROQ_API_KEY", "shared1")
+    monkeypatch.setenv("GROQ_API_KEY_2", "shared2")
+    monkeypatch.setenv("GROQ_APP_API_KEY", "app1")
+    assert llm.keys_for("groq") == ["shared1", "shared2"]
+    token = llm.client.set("app")
+    try:
+        assert llm.keys_for("groq") == ["app1", "shared1", "shared2"]
+    finally:
+        llm.client.reset(token)
+
+
+def test_conversation_is_shared_between_clients(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+    from backend.ai import chats
+    from backend.api.main import app
+    monkeypatch.setattr(chats, "DIR", tmp_path)
+    seen = {}
+
+    def fake_ask(q, provider, history, topic):
+        seen["history"] = history
+        seen["client"] = llm.client.get()
+        return {"answer": f"re: {q}", "grounded": True, "provider": "groq", "model": "m", "sources": []}
+    monkeypatch.setattr(agent, "ask", fake_ask)
+    c = TestClient(app)
+    c.post("/api/ai/ask", json={"question": "asked on the phone"}, headers={"X-RootLens-Client": "android"})
+    assert seen["client"] == "app"
+    c.post("/api/ai/ask", json={"question": "asked on the web"})
+    assert seen["client"] == "web" and seen["history"][0]["content"] == "asked on the phone"
+    msgs = c.get("/api/ai/chat").json()["messages"]
+    assert [m["client"] for m in msgs] == ["app", "app", "web", "web"]
+    assert c.delete("/api/ai/chat").json()["deleted"] == 4 and c.get("/api/ai/chat").json()["messages"] == []

@@ -12,8 +12,13 @@ vision:
 # Analyst agent and investigation brief. Phrases numbers the pipeline already computed.
 # benchmark 2026-10-23 (summary, tool use, JSON, honesty bait; pass / median latency):
 # gpt-oss-20b 8/8 1.9 s, qwen3.8-27b 6/8 1.0 s, gpt-oss-120b 4/8 2.5 s, gemini flash-lite 4/8 1.7 s
+# probe 2026-10-23 (tool call on "what should we do" + period comparison, then a full grounded answer):
+# groq x3 ~1.5 s; gemini flash-lite x2 ~12 s, grounded; nemotron lightning 1.7 s per call but its answers
+# often fail the number check, so it is last. gemini-2.5-* retired (404); flash-latest / 3.8-flash time out.
 text:
   - {provider: groq, model: openai/gpt-oss-20b, max_tokens: 3000}
   - {provider: groq, model: qwen/qwen3.8-27b, max_tokens: 3000}
   - {provider: groq, model: openai/gpt-oss-120b, max_tokens: 3000}
   - {provider: gemini, model: gemini-flash-lite-latest, max_tokens: 3000}
+  - {provider: gemini, model: gemini-3.5-flash-lite, max_tokens: 3000}
+  - {provider: openrouter, model: "nvidia/nemotron-3.5-lightning:free", max_tokens: 3000}

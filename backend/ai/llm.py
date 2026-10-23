@@ -7,6 +7,7 @@ User turns may carry "images": [(mime, bytes)]. Assistant turns may carry
 Gemini turns keep their raw parts so thought signatures are echoed back unchanged.
 """
 import base64
+import contextvars
 import json
 import os
 import re
@@ -67,25 +68,37 @@ class Reply:
 
 # ---------------- keys ----------------
 
+# Which client is asking ("web" or "app"). The Android app has its own keys (PROVIDER_APP_API_KEY, ..._2)
+# so phone and dashboard do not share one rate limit; app calls fall back to the shared keys after them.
+client: contextvars.ContextVar[str] = contextvars.ContextVar("rootlens_client", default="web")
+
+
+def _numbered(base: str) -> list[str]:
+    return [k for k in [os.getenv(base)] + [os.getenv(f"{base}_{i}") for i in range(2, 10)] if k]
+
+
 def keys_for(provider: str) -> list[str]:
-    """PROVIDER_API_KEY, PROVIDER_API_KEY_2, ... in order."""
-    base = f"{provider.upper()}_API_KEY"
-    keys = [os.getenv(base)] + [os.getenv(f"{base}_{i}") for i in range(2, 10)]
-    return [k for k in keys if k]
+    """PROVIDER_API_KEY, PROVIDER_API_KEY_2, ... in order; for the app, its own keys come first."""
+    shared = _numbered(f"{provider.upper()}_API_KEY")
+    if client.get() == "app":
+        own = _numbered(f"{provider.upper()}_APP_API_KEY")
+        return own + [k for k in shared if k not in own]
+    return shared
 
 
-_key_cursor = {p: 0 for p in PROVIDERS}
+_key_cursor: dict[tuple[str, str], int] = {}
 
 
 def _current_key(provider: str) -> str:
     keys = keys_for(provider)
     if not keys:
         raise LLMError(f"{provider.upper()}_API_KEY not set")
-    return keys[_key_cursor[provider] % len(keys)]
+    return keys[_key_cursor.get((provider, client.get()), 0) % len(keys)]
 
 
 def _rotate(provider: str) -> None:
-    _key_cursor[provider] += 1
+    k = (provider, client.get())
+    _key_cursor[k] = _key_cursor.get(k, 0) + 1
 
 
 def available() -> dict:
@@ -215,6 +228,10 @@ _BACKENDS = {
     "gemini": _gemini,
 }
 RETRYABLE = ("429", "500", "502", "503", "504", "no candidates", "no choices")
+# The model wrote a tool call the server could not parse (Groq 400 tool_use_failed). Sampling again usually works.
+BAD_GENERATION = ("tool_use_failed", "Failed to parse tool call", "failed_generation")
+# The key itself was refused (revoked, wrong project): try the next key.
+BAD_KEY = (" 401:", " 403:")
 
 
 def _wait_hint(msg: str) -> float:
@@ -227,16 +244,24 @@ def _wait_hint(msg: str) -> float:
 
 def chat(messages, tools=None, provider="groq", model=None, json_mode=False,
          temperature=0.1, max_tokens=2048, retries=2, max_wait=20.0) -> Reply:
-    """One completion. On a rate limit, switch to the next key at once; once every key has been
-    tried, wait for the server's hinted delay. Overload errors are retried after a delay."""
+    """One completion. On a rate limit or a refused key, switch to the next key at once; once every
+    key has been tried, wait for the server's hinted delay. Overload errors are retried after a delay.
+    A malformed tool call from the model is sampled again (twice at most) before giving up."""
     n_keys = max(1, len(keys_for(provider)))
-    rotations, attempt = 0, 0
+    rotations, attempt, resamples = 0, 0, 0
     while True:
         try:
             return _BACKENDS[provider](messages, tools, model or model_for(provider), json_mode,
-                                       temperature, max_tokens)
+                                       temperature if resamples == 0 else max(temperature, 0.4), max_tokens)
         except LLMError as e:
             msg = str(e)
+            if any(m in msg for m in BAD_GENERATION) and resamples < 2:
+                resamples += 1
+                continue
+            if any(m in msg for m in BAD_KEY) and rotations < n_keys - 1:
+                _rotate(provider)
+                rotations += 1
+                continue
             if not any(code in msg for code in RETRYABLE):
                 raise
             if "429" in msg and rotations < n_keys - 1:
@@ -287,7 +312,10 @@ def chat_with_fallback(messages, tools=None, order=None, pinned=None, **kw) -> R
     """Text/agent calls. `pinned=(provider, model)` keeps one model for a whole conversation;
     `order` restricts to providers (e.g. ('groq',)); default is the 'text' chain."""
     if pinned:
-        return chat(messages, tools, provider=pinned[0], model=pinned[1], **kw)
+        try:
+            return chat(messages, tools, provider=pinned[0], model=pinned[1], **kw)
+        except (LLMError, httpx.HTTPError):
+            pass   # the pinned model failed mid-conversation: carry on with the chain rather than fail the answer
     if order:
         steps = [s for s in chain("text") if s["provider"] in order] or                 [{"provider": p, "model": model_for(p)} for p in order if available().get(p)]
         errors = []

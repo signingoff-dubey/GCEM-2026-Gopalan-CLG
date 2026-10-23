@@ -1,10 +1,15 @@
 rules_version = '2';
 // The API (Cloud Function, admin access) writes everything. The dashboard reads only what it shows
-// live in the activity calendar; alert settings, the alert log and phone numbers stay server-side.
+// live in the activity calendar and the assistant conversations; alert settings, the alert log and phone numbers stay server-side.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{col}/{id} {
       allow read: if col in ['captures', 'inspections', 'assemblies'];
+      allow write: if false;
+    }
+    // assistant conversations, shared live by the dashboard and the phone (written only by the API)
+    match /chats/{topic}/messages/{id} {
+      allow read: if true;
       allow write: if false;
     }
   }
