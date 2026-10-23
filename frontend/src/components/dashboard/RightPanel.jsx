@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PanelRightClose, PanelRightOpen, TriangleAlert, CircleCheck, CircleDot, X } from 'lucide-react';
+import { PanelRightClose, PanelRightOpen, TriangleAlert, X } from 'lucide-react';
 import { Calendar, DateRail, useDayModel } from './CalendarParts';
 import { navigate } from '../../lib/router';
-import { CAPTURES, DAILY, DATASET, SPLIT } from '../../data/sample';
+import { useApi, dailyFrom, RUN_PATHS } from '../../lib/useApi';
+import { DATASET, day } from '../../lib/dataset';
+import { pct } from '../../lib/format';
 
-const Profile = () => {
+const Profile = ({ overview }) => {
+  const d = overview?.data;
   const stats = [
-    { value: DATASET.runs.toLocaleString('en-IN'), label: 'Runs' },
-    { value: DATASET.fails, label: 'Fails' },
-    { value: DATASET.features, label: 'Features' },
+    { value: d ? d.rows.toLocaleString('en-IN') : '-', label: 'Runs' },
+    { value: d ? d.fails : '-', label: 'Fails' },
+    { value: d ? d.features : '-', label: 'Features' },
   ];
   return (
     <div>
@@ -32,40 +35,37 @@ const Profile = () => {
   );
 };
 
-const BAND = {
-  high: { icon: TriangleAlert, tone: 'text-bad bg-bad/20', tag: 'High risk' },
-  medium: { icon: CircleDot, tone: 'text-warn bg-warn/20', tag: 'Medium risk' },
-  low: { icon: CircleCheck, tone: 'text-good bg-good/20', tag: 'Low risk' },
-};
-
-const RecentCaptures = () => (
-  <section>
-    <div className="flex items-center justify-between">
-      <h2 className="font-semibold">Recent captures</h2>
-      <button type="button" onClick={() => navigate('captures')} className="text-sm text-white/60 hover:text-white">View all</button>
-    </div>
-    <ul className="mt-3 flex flex-col gap-2">
-      {CAPTURES.map((c) => {
-        const { icon: Icon, tone, tag } = BAND[c.risk_band];
-        const off = c.top_contributors.filter((t) => !t.in_safe_window).length;
-        return (
-          <li key={c.id}>
-            <button type="button" onClick={() => navigate('captures', c.id)} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
-              <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${tone}`}>
-                <Icon size={18} />
+// Most recent recorded failures in the test window. The list endpoint carries the model's own estimate, not a risk band.
+const RecentFails = () => {
+  const { data, error, loading } = useApi('/api/runs?split=test&fails_only=true&limit=200');
+  const runs = data ? [...data.runs].reverse().slice(0, 3) : [];
+  return (
+    <section>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">Recent failed runs</h2>
+        <button type="button" onClick={() => navigate('captures')} className="text-sm text-white/60 hover:text-white">View all</button>
+      </div>
+      {loading && <p className="mt-3 text-xs text-white/55">Loading...</p>}
+      {error && <p className="mt-3 text-xs text-white/55">{error.status === 503 ? 'Not generated yet.' : 'Could not load runs.'}</p>}
+      <ul className="mt-3 flex flex-col gap-2">
+        {runs.map((c) => (
+          <li key={c.index}>
+            <button type="button" onClick={() => navigate('captures', String(c.index))} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-bad/20 text-bad">
+                <TriangleAlert size={18} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-white/75">{tag}</span>
-                <span className="mt-1 block truncate text-sm font-semibold">Run {c.run_id}</span>
-                <span className="block truncate text-xs text-white/55">{off ? `${off} driver${off > 1 ? 's' : ''} outside safe window` : 'All top drivers inside safe windows'}</span>
+                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-white/75">Recorded failure</span>
+                <span className="mt-1 block truncate text-sm font-semibold">Run {c.index}</span>
+                <span className="block truncate text-xs text-white/55">{c.timestamp.slice(0, 16)}, model-estimated {pct(c.fail_prob, 0)}</span>
               </span>
             </button>
           </li>
-        );
-      })}
-    </ul>
-  </section>
-);
+        ))}
+      </ul>
+    </section>
+  );
+};
 
 const KEY = 'right-expanded';
 const RAIL = 64;
@@ -96,14 +96,11 @@ const item = {
   show: { opacity: 1, x: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 260, damping: 26 } },
 };
 
-// The calendar opens on the last month of data, not today, since the SECOM runs are from 2008.
-const LAST = new Date(`${DATASET.end}T00:00:00`);
-
-const Summary = ({ model, picked, onPick }) => (
+const Summary = ({ overview, model, picked, onPick, last }) => (
   <>
-    <motion.div variants={item}><Profile /></motion.div>
-    <motion.div variants={item}><Calendar model={model} picked={picked} onPick={onPick} start={LAST} /></motion.div>
-    <motion.div variants={item}><RecentCaptures /></motion.div>
+    <motion.div variants={item}><Profile overview={overview} /></motion.div>
+    <motion.div variants={item}><Calendar key={last.getTime()} model={model} picked={picked} onPick={onPick} start={last} /></motion.div>
+    <motion.div variants={item}><RecentFails /></motion.div>
   </>
 );
 
@@ -154,7 +151,13 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
     }
   }, [expanded]);
 
-  const model = useDayModel(DAILY, SPLIT);
+  // The calendar opens on the last month of data, not today, since the SECOM runs are from 2008.
+  const { data } = useApi(['/api/overview', ...RUN_PATHS]);
+  const overview = data?.[0];
+  const daily = useMemo(() => (data ? dailyFrom(data.slice(1)) : []), [data]);
+  const split = useMemo(() => (overview ? Object.fromEntries(Object.entries(overview.split).map(([k, w]) => [k, { from: day(w.start), to: day(w.end) }])) : null), [overview]);
+  const last = useMemo(() => (overview ? new Date(`${day(overview.data.time_end)}T00:00:00`) : new Date()), [overview]);
+  const model = useDayModel(daily, split);
 
   return (
     <>
@@ -190,7 +193,7 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
                 style={{ width: INNER_WIDE }}
                 className="absolute inset-y-0 left-0 flex flex-col gap-4 overflow-y-auto px-1 pb-1"
               >
-                <Summary model={model} picked={picked} onPick={setPicked} />
+                <Summary overview={overview} model={model} picked={picked} onPick={setPicked} last={last} />
               </motion.div>
             ) : (
               <motion.div
@@ -202,7 +205,8 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
                 className="absolute inset-y-0 left-0 flex flex-col"
               >
                 <DateRail
-                  start={LAST}
+                  key={last.getTime()}
+                  start={last}
                   model={model}
                   picked={picked}
                   onPick={(d) => {
@@ -218,7 +222,7 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
       <AnimatePresence>
         {drawerOpen && (
           <Drawer onClose={onCloseDrawer}>
-            <Summary model={model} picked={picked} onPick={setPicked} />
+            <Summary overview={overview} model={model} picked={picked} onPick={setPicked} last={last} />
           </Drawer>
         )}
       </AnimatePresence>

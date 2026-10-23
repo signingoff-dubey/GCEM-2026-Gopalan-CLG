@@ -15,7 +15,7 @@ const nice = (max) => {
 };
 export const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : `${Math.round(n)}`);
 
-export const ChartCard = ({ title, sub, sample = true, live = false, badge, children, table, className = '' }) => (
+export const ChartCard = ({ title, sub, sample = false, live = false, badge, children, table, className = '' }) => (
   <section className={`card ${className}`}>
     <div className="flex flex-wrap items-start justify-between gap-2">
       <div className="min-w-0">

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Menu, PanelRightOpen, FlaskConical } from 'lucide-react';
 import { SyncDot, ProviderChip } from './ui';
 import { health, readApiSettings } from '../lib/api';
-import { DATASET } from '../data/sample';
+import { useApi } from '../lib/useApi';
+import { DATASET } from '../lib/dataset';
 
 const greeting = () => {
   const hour = new Date().getHours();
@@ -12,10 +13,11 @@ const greeting = () => {
 };
 
 // Top bar: page title, what the page is for, the data source and whether the API answers.
-// Until backend/api exists the ping fails and the dot says Offline; the screens keep running on sample data.
+// When the ping fails the dot says Offline and each screen shows its own retry state.
 const Navbar = ({ page, onOpenMenu, onOpenSummary }) => {
   const [status, setStatus] = useState(null); // null while checking, false when unreachable
   const isHome = page.slug === 'home';
+  const { data: overview } = useApi('/api/overview');
 
   useEffect(() => {
     let live = true;
@@ -40,10 +42,12 @@ const Navbar = ({ page, onOpenMenu, onOpenSummary }) => {
           <h1 className="text-2xl font-semibold tracking-tight text-balance">{isHome ? `${greeting()}` : page.label}</h1>
           <p className="mt-0.5 max-w-xl text-sm text-white/60">{page.description}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-warn/20 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-warn/40">
-              <FlaskConical size={12} /> Sample data
-            </span>
-            <ProviderChip name={`${DATASET.name}, ${DATASET.runs.toLocaleString('en-IN')} runs`} />
+            {status && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${status.artifacts_ready ? 'bg-good/15 text-white/85 ring-good/30' : 'bg-warn/20 text-white/85 ring-warn/40'}`}>
+                <FlaskConical size={12} /> {status.artifacts_ready ? 'Live from the API' : 'Artifacts not generated yet'}
+              </span>
+            )}
+            <ProviderChip name={overview ? `${DATASET.name}, ${overview.data.rows.toLocaleString('en-IN')} runs` : DATASET.name} />
             <SyncDot state={sync} />
           </div>
         </div>
