@@ -3,6 +3,9 @@
 // A 503 means the backend has not generated that artifact yet; ApiError carries the status so screens can say so.
 const KEY = 'rootlens-api';
 
+// The deployed API is a Cloud Function: its first request after idling loads the models, so allow longer.
+const TIMEOUT_MS = import.meta.env.VITE_FIREBASE === '1' ? 60000 : 15000;
+
 export const API_DEFAULTS = { url: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000', pollMs: 2000 };
 
 export const readApiSettings = () => {
@@ -36,7 +39,7 @@ export const apiUrl = (path) => (/^https?:/i.test(path) ? path : `${readApiSetti
 export const api = async (path, init = {}) => {
   // A FormData body sets its own multipart Content-Type (with the boundary), so JSON is only declared for everything else.
   const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData;
-  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { ...(isForm ? {} : { 'Content-Type': 'application/json' }), ...init.headers }, signal: init.signal ?? AbortSignal.timeout(15000) });
+  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { ...(isForm ? {} : { 'Content-Type': 'application/json' }), ...init.headers }, signal: init.signal ?? AbortSignal.timeout(TIMEOUT_MS) });
   if (!res.ok) {
     let detail = '';
     try {
