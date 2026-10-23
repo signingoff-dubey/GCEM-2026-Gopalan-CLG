@@ -1,13 +1,13 @@
 import { House, ListOrdered, Crosshair, PiggyBank, Camera, Settings, ChartNoAxesColumn, Wrench, Radio } from 'lucide-react';
 
 // Screens of the RootLens dashboard. `slug` is the URL hash (#/ranking).
-// Every screen runs on src/data/sample.js until the API exists; see frontend/README.md.
+// Every screen reads the RootLens API (src/lib/api.js); a 503 from it means the artifact has not been generated yet.
 export const pages = {
   home: { slug: 'home', label: 'Overview', icon: House, description: 'How well failures can be predicted on a later time window, and where to look first.' },
   ranking: { slug: 'ranking', label: 'Ranking', icon: ListOrdered, description: 'Statistically suspected drivers of failure, ranked, with stability across 50 bootstrap resamples.' },
   windows: { slug: 'windows', label: 'Safe windows', icon: Crosshair, description: 'Where each stable driver had the lowest failure rate, inside the range the line has run. Association, not proof.' },
   savings: { slug: 'savings', label: 'Savings', icon: PiggyBank, description: 'Model-estimated monthly savings as a range, under the assumptions you set.' },
-  captures: { slug: 'captures', label: 'Captures', icon: Camera, description: 'Process sheets photographed on the phone app, read, scored and checked against the safe windows.' },
+  captures: { slug: 'captures', label: 'Captures', icon: Camera, description: 'Runs scored by the model and checked against the safe windows. Phone captures will land here once the backend can read photos.' },
   settings: { slug: 'settings', label: 'Settings', icon: Settings, description: 'Theme, accent, surfaces, density, the API address and analysis defaults.' },
 };
 

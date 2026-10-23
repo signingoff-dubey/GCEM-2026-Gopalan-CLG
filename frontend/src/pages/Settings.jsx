@@ -202,7 +202,7 @@ const DataTab = () => {
             ['Split', 'By time: 70% train, 15% validation, 15% test. No shuffling.'],
             ['Model', 'LightGBM with class weights. Baseline: logistic regression.'],
             ['Metrics', 'PR-AUC and MCC with bootstrap CIs. Never accuracy.'],
-            ['Stability', '50 bootstrap refits. Stable when in the top 10 at least 70% of the time.'],
+            ['Stability', '50 bootstrap refits. Stable when in the top 10 at least 70% of the time and above the label-permutation noise floor.'],
             ['Safe window', 'Inside p5 to p95 of observed values. At least 30 runs per bin.'],
           ].map(([k, v]) => (
             <div key={k} className="contents">
