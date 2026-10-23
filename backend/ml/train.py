@@ -131,6 +131,27 @@ def random_split_inflation(X, y, n_estimators, seed=SEED) -> float:
     return float(np.mean(scores))
 
 
+def adversarial_drift(X_past, X_future, seed=SEED) -> dict:
+    """Can a classifier tell earlier runs from later ones? AUC ~0.5 = same process, ~1 = drifted."""
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold
+    X = pd.concat([X_past, X_future])
+    y = np.r_[np.zeros(len(X_past)), np.ones(len(X_future))]
+    pre = Preprocessor(impute=False).fit(X)
+    A = pre.transform(X)
+    p = np.zeros(len(y))
+    for tr, te in StratifiedKFold(5, shuffle=True, random_state=seed).split(A, y):
+        m = lgb.LGBMClassifier(n_estimators=100, num_leaves=15, verbose=-1, random_state=seed)
+        m.fit(A.iloc[tr], y[tr])
+        p[te] = m.predict_proba(A.iloc[te])[:, 1]
+    m = lgb.LGBMClassifier(n_estimators=100, num_leaves=15, verbose=-1, random_state=seed).fit(A, y)
+    top = pd.Series(m.feature_importances_, index=A.columns).sort_values(ascending=False).head(10)
+    auc = float(roc_auc_score(y, p))
+    return {"auc": auc, "drifting_parameters": list(top.index),
+            "badge": "strong drift" if auc > 0.8 else "moderate drift" if auc > 0.65 else "stable",
+            "note": "Train+val vs test window. High AUC explains why later-window performance drops."}
+
+
 def train_all(s: Split) -> dict:
     """Select settings on train+val only, refit on train+val, report on the later test window."""
     X_tv = pd.concat([s.X_train, s.X_val])
@@ -170,6 +191,7 @@ def train_all(s: Split) -> dict:
             "val_from_train_only": evaluate(s.y_val, predict(logit_thr, s.X_val), logit.threshold),
             "test": evaluate(s.y_test, predict(logit, s.X_test), logit.threshold),
         },
+        "drift": adversarial_drift(X_tv, s.X_test),
         "leakage_contrast": {
             "random_split_pr_auc": random_split_inflation(X_tv, y_tv, n_est),
             "note": "Shuffled CV mixes future rows into training; not a valid estimate on drifting process data.",

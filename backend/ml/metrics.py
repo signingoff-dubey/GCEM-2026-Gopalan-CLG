@@ -63,7 +63,9 @@ def evaluate(y, p, threshold) -> dict:
         "prevalence": float(y.mean()),
         "pr_auc": bootstrap_ci(y, p, pr_auc),
         "mcc": bootstrap_ci(y, p, lambda a, b: mcc(a, b, threshold)),
+        "pr_auc_lift_over_random": float(pr_auc(y, p) / y.mean()) if y.mean() > 0 else None,
         "recall_at_precision_0.3": recall_at_precision(y, p, 0.3),
+        "capture_curve": capture_curve(y, p),
         "threshold": float(threshold),
         "confusion": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
     }
@@ -78,3 +80,17 @@ def wilson_ci(k: int, n: int, alpha=0.05) -> tuple[float, float]:
     centre = (phat + z**2 / (2 * n)) / denom
     half = z * np.sqrt(phat * (1 - phat) / n + z**2 / (4 * n**2)) / denom
     return (float(max(0.0, centre - half)), float(min(1.0, centre + half)))
+
+
+def capture_curve(y, p, fractions=(0.05, 0.10, 0.20, 0.30)) -> list[dict]:
+    """'Inspect the top x% riskiest runs and catch y% of failures.' Random catches x%."""
+    y, p = np.asarray(y), np.asarray(p)
+    order = np.argsort(-p)
+    total = max(y.sum(), 1)
+    out = []
+    for f in fractions:
+        k = max(1, int(round(len(y) * f)))
+        caught = int(y[order[:k]].sum())
+        out.append({"inspect_frac": f, "inspected": k, "fails_caught": caught,
+                    "capture_rate": caught / total, "random_capture_rate": f})
+    return out
