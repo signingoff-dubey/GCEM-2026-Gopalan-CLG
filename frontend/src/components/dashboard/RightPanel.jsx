@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PanelRightClose, PanelRightOpen, TriangleAlert, X } from 'lucide-react';
-import { Calendar, DateRail, useDayModel } from './CalendarParts';
-import { navigate } from '../../lib/router';
-import { useApi, dailyFrom, RUN_PATHS } from '../../lib/useApi';
-import { DATASET, day } from '../../lib/dataset';
-import { pct } from '../../lib/format';
+import { Box, Camera, PanelRightClose, PanelRightOpen, ScanSearch, X } from 'lucide-react';
+import { Calendar, DateRail, useLiveDayModel } from './CalendarParts';
+import { useApi } from '../../lib/useApi';
+import { useActivity, useToday } from '../../lib/useActivity';
+import { DATASET } from '../../lib/dataset';
 
 const Profile = ({ overview }) => {
   const d = overview?.data;
@@ -35,31 +34,35 @@ const Profile = ({ overview }) => {
   );
 };
 
-// Most recent recorded failures in the test window. The list carries the model's own estimate and its risk band.
-const RecentFails = () => {
-  const { data, error, loading } = useApi('/api/runs?split=test&fails_only=true&limit=200');
-  const runs = data ? [...data.runs].reverse().slice(0, 3) : [];
+// The latest captures, scan inspections and model uploads, pushed by the server as they happen.
+const TONE = { rose: 'bg-bad/20 text-bad', good: 'bg-good/20 text-good', info: 'bg-info/20 text-info' };
+const KIND_ICON = { capture: Camera, inspection: ScanSearch, assembly: Box };
+
+const RecentActivity = ({ activity }) => {
+  const recent = activity.data?.recent ?? [];
   return (
     <section>
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Recent failed runs</h2>
-        <button type="button" onClick={() => navigate('captures', 'history')} className="text-sm text-white/60 hover:text-white">View all</button>
-      </div>
-      {loading && <p className="mt-3 text-xs text-white/55">Loading...</p>}
-      {error && <p className="mt-3 text-xs text-white/55">{error.status === 503 ? 'Not generated yet.' : 'Could not load runs.'}</p>}
+      <h2 className="font-semibold">Recent activity</h2>
+      {!activity.data && !activity.error && <p className="mt-3 text-xs text-white/55">Connecting...</p>}
+      {activity.error && !activity.data && <p className="mt-3 text-xs text-white/55">Could not reach the API.</p>}
+      {activity.data && recent.length === 0 && (
+        <p className="mt-3 text-xs text-white/55">Nothing yet. Captures, scans and model uploads appear here as they happen.</p>
+      )}
       <ul className="mt-3 flex flex-col gap-2">
-        {runs.map((c) => (
-          <li key={c.index}>
-            <button type="button" onClick={() => navigate('captures', String(c.index))} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-bad/20 text-bad">
-                <TriangleAlert size={18} />
+        {recent.slice(0, 4).map((e) => (
+          <li key={e.id}>
+            <a href={e.link} className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-2.5 text-left transition-colors hover:bg-black/30">
+              <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${TONE[e.tone] ?? TONE.info}`} aria-hidden="true">
+                {(() => {
+                  const Icon = KIND_ICON[e.kind] ?? Box;
+                  return <Icon size={16} />;
+                })()}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-white/75">Recorded failure</span>
-                <span className="mt-1 block truncate text-sm font-semibold">Run {c.index}</span>
-                <span className="block truncate text-xs text-white/55">{c.timestamp.slice(0, 16)}, model-estimated {pct(c.fail_prob, 0)}</span>
+                <span className="block truncate text-sm font-semibold">{e.title}</span>
+                <span className="block truncate text-xs text-white/55">{e.at.replace('T', ' ').slice(0, 16)}</span>
               </span>
-            </button>
+            </a>
           </li>
         ))}
       </ul>
@@ -96,11 +99,22 @@ const item = {
   show: { opacity: 1, x: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 260, damping: 26 } },
 };
 
-const Summary = ({ overview, model, picked, onPick, last }) => (
+// Shows whether the calendar is receiving pushes from the server right now.
+const LiveBadge = ({ live }) => (
+  <p className="flex items-center gap-1.5 px-1 text-xs text-white/60">
+    <span className={`size-1.5 rounded-full ${live ? 'animate-pulse bg-good' : 'bg-white/40'}`} aria-hidden="true" />
+    {live ? 'Live, synced with the server' : 'Reconnecting, refreshing every 10 s'}
+  </p>
+);
+
+const Summary = ({ overview, model, picked, onPick, start, activity }) => (
   <>
     <motion.div variants={item}><Profile overview={overview} /></motion.div>
-    <motion.div variants={item}><Calendar key={last.getTime()} model={model} picked={picked} onPick={onPick} start={last} /></motion.div>
-    <motion.div variants={item}><RecentFails /></motion.div>
+    <motion.div variants={item} className="flex flex-col gap-2">
+      <LiveBadge live={activity.live} />
+      <Calendar key={`${start.getFullYear()}-${start.getMonth()}`} model={model} picked={picked} onPick={onPick} start={start} />
+    </motion.div>
+    <motion.div variants={item}><RecentActivity activity={activity} /></motion.div>
   </>
 );
 
@@ -151,13 +165,14 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
     }
   }, [expanded]);
 
-  // The calendar opens on the last month of data, not today, since the SECOM runs are from 2008.
-  const { data } = useApi(['/api/overview', ...RUN_PATHS]);
-  const overview = data?.[0];
-  const daily = useMemo(() => (data ? dailyFrom(data.slice(1)) : []), [data]);
-  const split = useMemo(() => (overview ? Object.fromEntries(Object.entries(overview.split).map(([k, w]) => [k, { from: day(w.start), to: day(w.end) }])) : null), [overview]);
-  const last = useMemo(() => (overview ? new Date(`${day(overview.data.time_end)}T00:00:00`) : new Date()), [overview]);
-  const model = useDayModel(daily, split);
+  const activity = useActivity();
+  const today = useToday();
+
+  // The calendar is live: it opens on today, rolls over at midnight and is pushed new captures,
+  // scan inspections and model uploads by the server as they happen.
+  const { data: overview } = useApi('/api/overview');
+  const model = useLiveDayModel(activity.data, today);
+  const start = today;
 
   return (
     <>
@@ -193,7 +208,7 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
                 style={{ width: INNER_WIDE }}
                 className="absolute inset-y-0 left-0 flex flex-col gap-4 overflow-y-auto px-1 pb-1"
               >
-                <Summary overview={overview} model={model} picked={picked} onPick={setPicked} last={last} />
+                <Summary overview={overview} model={model} picked={picked} onPick={setPicked} start={start} activity={activity} />
               </motion.div>
             ) : (
               <motion.div
@@ -205,8 +220,8 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
                 className="absolute inset-y-0 left-0 flex flex-col"
               >
                 <DateRail
-                  key={last.getTime()}
-                  start={last}
+                  key={`${start.getFullYear()}-${start.getMonth()}`}
+                  start={start}
                   model={model}
                   picked={picked}
                   onPick={(d) => {
@@ -222,7 +237,7 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
       <AnimatePresence>
         {drawerOpen && (
           <Drawer onClose={onCloseDrawer}>
-            <Summary overview={overview} model={model} picked={picked} onPick={setPicked} last={last} />
+            <Summary overview={overview} model={model} picked={picked} onPick={setPicked} start={start} activity={activity} />
           </Drawer>
         )}
       </AnimatePresence>

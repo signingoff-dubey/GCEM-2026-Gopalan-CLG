@@ -6,32 +6,37 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 export const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-// What is on each date: runs, fails and which split window it belongs to (train / validation / test).
-// One model feeds the dot colours and the day's event list, so they can never disagree.
-export const useDayModel = (daily, split) =>
+const LIVE_LEGEND = [['bg-white', 'Today'], ['bg-info', 'Activity'], ['bg-rose', 'Needs attention']];
+
+// What happened on each date in this app (captures, scan inspections, model uploads).
+// One model feeds the date colours, the legend and the day's event list, so they can never disagree.
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+export const useLiveDayModel = (activity, today) =>
   useMemo(() => {
-    const byDate = Object.fromEntries((daily ?? []).map((d) => [d.date, d]));
-    const windowOf = (d) => (!split ? null : d >= split.test.from && d <= split.test.to ? 'Test window' : d >= split.val.from && d <= split.val.to ? 'Validation window' : d >= split.train.from && d <= split.train.to ? 'Train window' : null);
-    const todayIso = iso(new Date());
+    const byDate = Object.fromEntries((activity?.days ?? []).map((d) => [d.date, d]));
+    const todayIso = iso(today);
     const info = (d) => {
       const items = [];
       if (d === todayIso) items.push({ text: 'Today', tone: 'accent' });
       const row = byDate[d];
-      if (row) items.push({ text: `${row.runs} runs, ${row.fails} failed`, tone: row.fails >= 2 ? 'rose' : 'good' });
-      const w = windowOf(d);
-      if (w) items.push({ text: w, tone: w === 'Test window' ? 'info' : 'good' });
+      if (!row) return items;
+      if (row.capture) items.push({ text: plural(row.capture, 'capture'), tone: 'good' });
+      if (row.inspection) items.push({ text: plural(row.inspection, 'scan inspection'), tone: 'info' });
+      if (row.assembly) items.push({ text: plural(row.assembly, 'model upload'), tone: 'info' });
+      if (row.alerts) items.push({ text: `${plural(row.alerts, 'item')} needing attention`, tone: 'rose' });
+      for (const e of row.events.slice(0, 4)) items.push({ text: `${e.at.slice(11, 16)} ${e.title}`, tone: e.tone });
       return items;
     };
     const style = (d) => {
-      if (d === todayIso) return 'bg-white text-ink font-semibold'; // white, so it never matches the accent colour
       const row = byDate[d];
-      if (row?.fails >= 2) return 'bg-rose text-white font-semibold';
-      if (row && windowOf(d) === 'Test window') return 'bg-info/80 text-white font-semibold';
-      if (row) return 'bg-good/70 text-white font-semibold';
+      if (d === todayIso) return row ? 'bg-white text-ink font-semibold ring-2 ring-accent' : 'bg-white text-ink font-semibold';
+      if (row?.alerts) return 'bg-rose text-white font-semibold';
+      if (row) return 'bg-info/80 text-white font-semibold';
       return 'text-white/75 hover:bg-white/10';
     };
-    return { info, style };
-  }, [daily, split]);
+    return { info, style, legend: LIVE_LEGEND };
+  }, [activity, today]);
 
 // Dots on the dark panel: today is white here, as on the calendar itself.
 const DOT = { accent: 'bg-white', good: 'bg-good', rose: 'bg-rose', info: 'bg-info' };
@@ -290,10 +295,9 @@ export const Calendar = ({ model, picked = null, onPick = () => {}, start = new 
           )}
         </motion.div>
         <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/55">
-          <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-white" />Today</li>
-          <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-good" />Runs</li>
-          <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-rose" />2+ fails</li>
-          <li className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-info" />Test window</li>
+          {(model.legend ?? LIVE_LEGEND).map(([cls, label]) => (
+            <li key={label} className="flex items-center gap-1.5"><span className={`size-2 rounded-full ${cls}`} />{label}</li>
+          ))}
         </ul>
       </div>
       <AnimatePresence initial={false}>
