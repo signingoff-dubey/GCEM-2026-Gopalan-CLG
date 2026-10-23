@@ -56,7 +56,7 @@ backend/
 pip install -r requirements.txt
 ```
 Data goes under `data/`, which is gitignored:
-- `secom.zip` at the repo root (included), auto-extracted to `data/secom/`
+- `datasets/secom.zip` (included), auto-extracted to `data/secom/`
 - `data/ai4i/ai4i2020.csv`, from UCI dataset 601
 - `data/bosch-production-line-performance/train_numeric.csv.zip` and `train_date.csv.zip`, from Kaggle. Then run `make bosch-sample`.
 

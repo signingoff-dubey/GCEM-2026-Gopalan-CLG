@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 SECOM_DIR = DATA_DIR / "secom"
-SECOM_ZIP = ROOT / "secom.zip"
+SECOM_ZIP = ROOT / "datasets" / "secom.zip"
 BOSCH_DIR = DATA_DIR / "bosch"
 ARTIFACTS_DIR = ROOT / "artifacts"
 
