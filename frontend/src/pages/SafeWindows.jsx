@@ -1,8 +1,27 @@
 import { useState } from 'react';
-import { CardTitle, Tabs } from '../components/ui';
+import { Banner, CardTitle, Tabs } from '../components/ui';
+import Gate from '../components/ui/Gate';
 import { num, pct } from '../lib/format';
 import { navigate } from '../lib/router';
-import { SAFE_WINDOWS } from '../data/sample';
+import { useApi } from '../lib/useApi';
+
+// API window -> the shape the cards below draw. bound is the observed operating range (p5 to p95).
+const adapt = (x) => ({
+  feature: x.feature,
+  status: x.status,
+  recommended: x.status === 'recommended',
+  bound: x.operating_range,
+  median: x.current_median,
+  window: x.window,
+  nIn: x.fit.n_in,
+  rateIn: { value: x.fit.rate_in, ci: x.fit.rate_in_ci },
+  nOut: x.fit.n_out,
+  rateOut: { value: x.fit.rate_out, ci: x.fit.rate_out_ci },
+  bins: x.bins,
+  test: x.test_window_check,
+  modelEst: x.model_estimate,
+  text: x.text,
+});
 
 // Position of a value on the bound strip, 0..100.
 const at = (w, v) => ((v - w.bound[0]) / (w.bound[1] - w.bound[0])) * 100;
@@ -43,8 +62,13 @@ const RateBar = ({ label, n, rate, strong }) => {
 const WindowCard = ({ w, active, onPick }) => (
   <section className={`card ${active ? 'ring-2 ring-accent' : ''}`}>
     <CardTitle
-      sub={`Move from median ${num(w.median, 3)} to ${num(w.window[0], 3)} to ${num(w.window[1], 3)}.`}
-      action={<button type="button" onClick={onPick} className="btn-ghost h-8 px-3 text-xs">Try it</button>}
+      sub={`Current median ${num(w.median, 3)}; lowest-failure window ${num(w.window[0], 3)} to ${num(w.window[1], 3)}.`}
+      action={
+        <span className="flex items-center gap-2">
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${w.recommended ? 'bg-good/12 text-good' : 'bg-ink/8 text-ink/65'}`}>{w.recommended ? 'Recommended' : 'Not recommended'}</span>
+          {onPick && <button type="button" onClick={onPick} className="btn-ghost h-8 px-3 text-xs">Try it</button>}
+        </span>
+      }
     >
       <span className="font-mono">{w.feature}</span>
     </CardTitle>
@@ -53,8 +77,10 @@ const WindowCard = ({ w, active, onPick }) => (
       <RateBar label="Inside the window" n={w.nIn} rate={w.rateIn} strong />
       <RateBar label="Outside" n={w.nOut} rate={w.rateOut} />
     </div>
+    {!w.recommended && <p className="mt-3 text-xs font-medium text-bad">Status: {w.status}. Do not act on this window.</p>}
     <p className="mt-3 rounded-xl bg-ink/5 p-2.5 text-xs text-ink/70">
-      Test window check (not used to pick the window): {pct(w.testCheck.rateIn)} inside (n={w.testCheck.nIn}) versus {pct(w.testCheck.rateOut)} outside (n={w.testCheck.nOut}).
+      Test window check (not used to pick the window): {pct(w.test.rate_in)} inside (n={w.test.n_in}) versus {pct(w.test.rate_out)} outside (n={w.test.n_out}).{' '}
+      <span className={`font-semibold ${/held on test/i.test(w.test.verdict) ? 'text-good' : 'text-bad'}`}>{w.test.verdict[0].toUpperCase() + w.test.verdict.slice(1)}.</span>
     </p>
   </section>
 );
@@ -63,9 +89,9 @@ const WindowCard = ({ w, active, onPick }) => (
 const WhatIf = ({ w }) => {
   const [value, setValue] = useState(w.median);
   const inside = value >= w.window[0] && value <= w.window[1];
-  const hist = inside ? w.rateIn : w.rateOut;
-  // shortcut: two fixed model-estimated points (outside / inside), until the API rescores the row for each slider value.
-  const est = inside ? w.modelEst.after : w.modelEst.before;
+  // Historical rate in the bin the slider sits in; falls back to inside/outside the window when the bins are missing.
+  const bin = w.bins?.find((b, i) => value >= b.window[0] && (value < b.window[1] || (i === w.bins.length - 1 && value <= b.window[1])));
+  const hist = bin ? { value: bin.rate, ci: bin.rate_ci } : inside ? w.rateIn : w.rateOut;
   const step = (w.bound[1] - w.bound[0]) / 200;
   return (
     <section className="card">
@@ -84,40 +110,52 @@ const WhatIf = ({ w }) => {
           <p className={`text-xs font-semibold ${inside ? 'text-good' : 'text-ink/60'}`}>{inside ? 'Inside the safe window' : 'Outside the safe window'}</p>
         </div>
         <div className="rounded-xl bg-ink/5 p-3">
-          <p className="text-xs text-ink/60">Historical fail rate here</p>
+          <p className="text-xs text-ink/60">Historical fail rate {bin ? `in this range (n=${bin.n})` : 'here'}</p>
           <p className="tabular text-lg font-bold">{pct(hist.value)}</p>
           <p className="tabular text-xs text-ink/60">CI {pct(hist.ci[0])} to {pct(hist.ci[1])}</p>
         </div>
       </div>
       <p className="mt-3 text-xs text-ink/65">
-        <span className="rounded bg-warn/15 px-1.5 py-0.5 font-semibold text-warn">Model-estimated</span> fail probability {pct(est)}. The model scoring its own suggestion is circular; trust the historical rate first.
+        <span className="rounded bg-warn/15 px-1.5 py-0.5 font-semibold text-warn">Model-estimated</span> mean fail probability of the {w.modelEst.rows_shifted} runs outside the window: {pct(w.modelEst.mean_fail_prob_before)} now, {pct(w.modelEst.mean_fail_prob_after)} if they were moved inside. The model scoring its own suggestion is circular; trust the historical rate first.
       </p>
       <p className="mt-2 text-xs font-medium text-ink/70">Association, not proof. Confirm with a pilot on the line.</p>
     </section>
   );
 };
 
-const SafeWindows = ({ id }) => {
-  const start = SAFE_WINDOWS.find((w) => w.feature === id) ?? SAFE_WINDOWS[0];
+const Body = ({ sw, id }) => {
+  const windows = sw.windows.filter((x) => x.fit).map(adapt);
+  const start = windows.find((w) => w.feature === id) ?? windows[0];
   const [picked, setPicked] = useState(start.feature);
-  const w = SAFE_WINDOWS.find((x) => x.feature === picked) ?? start;
+  const w = windows.find((x) => x.feature === picked) ?? start;
   const pick = (f) => {
     setPicked(f);
     navigate('windows', f);
   };
   return (
     <div className="flex flex-col gap-[var(--gap)]">
-      <Tabs tabs={SAFE_WINDOWS.map((x) => x.feature)} active={w.feature} onChange={pick} dark />
+      <Banner tone="warn">
+        {sw.caveat} Only recommended windows are meant to be acted on; the rest are listed so you can see why they were rejected. Baseline fail rate {pct(sw.baseline_fail_rate)}.
+      </Banner>
+      <Tabs tabs={windows.map((x) => x.feature)} active={w.feature} onChange={pick} dark />
       <div className="grid gap-[var(--gap)] xl:grid-cols-2">
         <WhatIf key={w.feature} w={w} />
-        <WindowCard w={w} active />
+        <div className="flex flex-col gap-[var(--gap)]">
+          <WindowCard w={w} active />
+          <p className="rounded-2xl bg-black/25 px-4 py-3 text-xs text-white/75 ring-1 ring-white/10">{w.text}</p>
+        </div>
       </div>
-      <h2 className="mt-2 text-sm font-semibold text-white/75">All stable drivers</h2>
+      <h2 className="mt-2 text-sm font-semibold text-white/75">Other parameters</h2>
       <div className="grid gap-[var(--gap)] lg:grid-cols-2 2xl:grid-cols-3">
-        {SAFE_WINDOWS.filter((x) => x.feature !== w.feature).map((x) => <WindowCard key={x.feature} w={x} onPick={() => pick(x.feature)} />)}
+        {windows.filter((x) => x.feature !== w.feature).map((x) => <WindowCard key={x.feature} w={x} onPick={() => pick(x.feature)} />)}
       </div>
     </div>
   );
+};
+
+const SafeWindows = ({ id }) => {
+  const q = useApi('/api/safe-windows');
+  return <Gate q={q} what="Safe windows">{(sw) => <Body sw={sw} id={id} />}</Gate>;
 };
 
 export default SafeWindows;
