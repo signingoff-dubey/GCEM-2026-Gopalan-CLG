@@ -30,13 +30,18 @@ export class ApiError extends Error {
   }
 }
 
+// Absolute URL for something the API serves (images, GLB models). Paths the API returns are relative to its base.
+export const apiUrl = (path) => (/^https?:/i.test(path) ? path : `${readApiSettings().url}${path}`);
+
 export const api = async (path, init = {}) => {
-  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers }, signal: init.signal ?? AbortSignal.timeout(15000) });
+  // A FormData body sets its own multipart Content-Type (with the boundary), so JSON is only declared for everything else.
+  const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData;
+  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { ...(isForm ? {} : { 'Content-Type': 'application/json' }), ...init.headers }, signal: init.signal ?? AbortSignal.timeout(15000) });
   if (!res.ok) {
     let detail = '';
     try {
       const body = await res.json();
-      detail = typeof body.detail === 'string' ? body.detail : '';
+      detail = typeof body.detail === 'string' ? body.detail : Array.isArray(body.detail) ? body.detail.map((d) => d.msg ?? JSON.stringify(d)).join('; ') : body.detail?.message ?? '';
     } catch {
       // No JSON body: the status line is all there is.
     }
@@ -46,5 +51,8 @@ export const api = async (path, init = {}) => {
 };
 
 export const post = (path, body, init = {}) => api(path, { ...init, method: 'POST', body: JSON.stringify(body) });
+
+// Multipart upload (photos, 3D scans). Uploads and model calls are slower than the 15 s default, so the timeout is longer.
+export const postForm = (path, form, init = {}) => api(path, { signal: AbortSignal.timeout(120000), ...init, method: 'POST', body: form });
 
 export const health = () => api('/api/health');
