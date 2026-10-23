@@ -40,3 +40,15 @@ def test_report_counts_and_order():
     X = pd.DataFrame({"good": rng.normal(0, 1, 800), "dead": np.r_[rng.normal(0, 1, 600), [np.nan] * 200]})
     rep = health.report(X, n_train=600, recent=200, windows=4)
     assert rep["counts"]["bad"] == 1 and rep["sensors"][0]["sensor"] == "dead" and len(rep["sensors"][0]["trace"]) == 4
+
+
+def test_exports_have_no_empty_cells():
+    import csv
+    import io
+    from fastapi.testclient import TestClient
+    from backend.api.main import app
+    c = TestClient(app)
+    for path in ("/api/export/sensors.csv", "/api/export/runs.csv"):
+        rows = list(csv.reader(io.StringIO(c.get(path).text)))
+        assert rows and len({len(r) for r in rows}) == 1
+        assert not [(i, j) for i, r in enumerate(rows) for j, v in enumerate(r) if not v.strip()], path

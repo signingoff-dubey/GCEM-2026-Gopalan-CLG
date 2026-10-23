@@ -23,6 +23,8 @@ from backend.ml.features import Preprocessor, correlation_groups
 router = APIRouter(prefix="/api", tags=["export"])
 
 NOT_PUBLISHED = "not published (SECOM is anonymised)"
+MISSING = "missing: the sensor gave no reading for this run"
+INFO_ROW = "n/a: sensor information row, not a run"
 RECENT_RUNS = 200
 
 
@@ -86,7 +88,25 @@ def _sensor_table() -> list[dict]:
             "health": h.get("status", ""),
             "health_reasons": "; ".join(h.get("reasons", [])),
         })
+        _explain_blanks(rows[-1], no_rank, no_window, kept)
     return rows
+
+
+def _explain_blanks(row: dict, no_rank: str, no_window: str, kept: bool) -> None:
+    """No cell is left empty: where there is no value, say why."""
+    why = {
+        "mean_rank": no_rank, "rank_sd": no_rank, "top10_share": no_rank, "stable_driver": no_rank,
+        "safe_window_low": no_window, "safe_window_high": no_window, "window_status": no_window,
+        "correlation_group": "none: dropped before training" if not kept else "none: moves with no other sensor",
+        "train_min": "no readings in training", "train_p1": "no readings in training", "train_mean": "no readings in training",
+        "train_p99": "no readings in training", "train_max": "no readings in training",
+        "health": "not checked",
+        "health_reasons": "none: behaves as it did in training" if row.get("health") == "ok"
+                          else "none: constant in training, carries no signal" if row.get("health") == "no signal" else "none",
+    }
+    for k, v in row.items():
+        if v is None or v == "":
+            row[k] = why.get(k, "not available")
 
 
 def _r(v, n=6):
@@ -150,15 +170,15 @@ def export_runs():
             t = table[c]
             if key is None:
                 lo, hi = t["safe_window_low"], t["safe_window_high"]
-                cells.append(f"{lo}..{hi}" if lo is not None else "")
+                cells.append(f"{lo}..{hi}" if isinstance(lo, float) else t["window_status"])
             else:
                 cells.append(t[key])
-        out.append(["sensor_info", label, "", "", "", "", "", "", ""] + cells)
+        out.append(["sensor_info", label] + [INFO_ROW] * 7 + cells)
     for i in range(len(X)):
         rp = replay.get(i, {})
         split = "train" if i < n_tr else "validation" if i < n_tr + n_va else "test"
-        vals = ["" if v != v else _r(v) for v in X.iloc[i].to_numpy()]
-        out.append(["run", f"R-{i:04d}", i, str(ts.iloc[i]), rp.get("at", ""), split, "fail" if y.iloc[i] else "pass",
-                    rp.get("risk", ""), "yes" if rp.get("high_risk") else "no"] + vals)
+        vals = [MISSING if v != v else _r(v) for v in X.iloc[i].to_numpy()]
+        out.append(["run", f"R-{i:04d}", i, str(ts.iloc[i]), rp.get("at") or "not replayed", split, "fail" if y.iloc[i] else "pass",
+                    rp.get("risk", "not scored"), "yes" if rp.get("high_risk") else "no"] + vals)
     return Response(_csv(out), media_type="text/csv",
                     headers={"Content-Disposition": "attachment; filename=rootlens_secom_labelled.csv"})
