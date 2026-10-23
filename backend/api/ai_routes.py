@@ -8,9 +8,16 @@ from backend.ai import agent, llm, orchestrator
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
 
+@router.get("/topics")
+def topics():
+    """What the assistant can be pointed at: the line analysis and each saved model or multi-part scan."""
+    from backend.ai import topic
+    return {"topics": topic.topics()}
+
+
 @router.get("/status")
 def status():
-    return {"providers": llm.available(),
+    return {"providers": llm.available(), "models": {p: llm.model_for(p) for p in llm.PROVIDERS},
             "chains": {t: llm.chain(t) for t in ("text", "vision")},
             "keys": {p: len(llm.keys_for(p)) for p in llm.PROVIDERS}}
 
@@ -19,12 +26,13 @@ class AskRequest(BaseModel):
     question: str = Field(..., min_length=2, max_length=2000)
     provider: str | None = Field(None, pattern="^(groq|gemini|openrouter)$")
     history: list[dict] = Field(default_factory=list, description="prior turns: {role, content}")
+    topic: str | None = Field(None, max_length=40, description="a saved model or scan id the conversation is about")
 
 
 @router.post("/ask")
 async def ask(req: AskRequest):
     try:
-        return await run_in_threadpool(agent.ask, req.question, req.provider, agent.history_from(req.history))
+        return await run_in_threadpool(agent.ask, req.question, req.provider, agent.history_from(req.history), req.topic)
     except llm.LLMError as e:
         raise HTTPException(502, str(e))
 
@@ -42,3 +50,16 @@ async def investigate(req: InvestigateRequest):
                                        req.scrap_cost_per_part)
     except llm.LLMError as e:
         raise HTTPException(502, str(e))
+
+
+class VoiceRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=1000)
+    caller: str | None = None
+
+
+@router.post("/voice")
+async def voice(req: VoiceRequest):
+    """HTTP tool for the Sarvam phone agent: a spoken answer about any date, month or the analysis.
+    Read-only like /api/ai/ask (same public analysis data), so the phone agent needs no secret."""
+    from backend.ai import voice as v
+    return await run_in_threadpool(v.answer, req.question)

@@ -141,6 +141,69 @@ def explain_run(index: int) -> dict:
             "model_estimate": cf.get("model_estimate"), "label": d["label"]}
 
 
+def get_solutions() -> dict:
+    from backend.api.solutions import solutions
+    return solutions()
+
+
+def get_data_quality() -> dict:
+    d = _art("data_quality.json") or {}
+    return {k: d.get(k) for k in ("steps", "splits", "shape_check", "imbalance")}
+
+
+def _replay():
+    from backend.ml import replay
+    return replay, state.json("replay.json")
+
+
+def get_period(start: str, end: str | None = None) -> dict:
+    """Runs, failures, fail rate and model risk for a day, month, range or phrase like 'last month'."""
+    rp, r = _replay()
+    s, e = rp.resolve(r, start)
+    return rp.period(r, s, end or e)
+
+
+def compare_periods(a: str, b: str) -> dict:
+    rp, r = _replay()
+    sa, ea = rp.resolve(r, a)
+    sb, eb = rp.resolve(r, b)
+    pa, pb = rp.period(r, sa, ea), rp.period(r, sb, eb)
+    diff = {}
+    if pa.get("runs") and pb.get("runs"):
+        diff = {"fail_rate_change": round(pb["fail_rate"] - pa["fail_rate"], 4), "runs_change": pb["runs"] - pa["runs"],
+                "fails_change": pb["fails"] - pa["fails"]}
+    return {"a": pa, "b": pb, "b_minus_a": diff, "label": r["label"]}
+
+
+def get_drift() -> dict:
+    d = _art("drift.json") or {}
+    r = d.get("report", {})
+    return {"data_period": r.get("data_period"), "train_vs_test_auc": (r.get("adversarial") or {}).get("auc"),
+            "sensors_shifted": r.get("sensors_shifted_psi_gt_0_25"), "sensors_checked": r.get("sensors_checked"),
+            "most_shifted": (r.get("most_shifted") or [])[:5], "experiment": d.get("experiment")}
+
+
+def get_latest_inspection() -> dict:
+    """The newest 3D model or multi-part scan with its damaged parts and the suggested fix for each."""
+    from backend.assembly import service as asm
+    from backend.inspection import service as insp
+    rows = [("model", a["id"], a["created"]) for a in asm.listing()] +            [("scan", i["id"], i["created"]) for i in insp.listing() if i.get("part_damage") or i.get("cracks_found")]
+    if not rows:
+        return {"none": "no model or scan has been inspected yet"}
+    kind, rid, _ = max(rows, key=lambda r: r[2])
+    if kind == "model":
+        m = asm.get(rid) or {}
+        label, dmg = m.get("label"), m.get("damage", [])
+    else:
+        r = insp.get(rid) or {}
+        label, dmg = (r.get("inputs") or {}).get("mesh"), (r.get("parts") or {}).get("damage", [])
+    return {"id": rid, "label": label, "damage": [
+        {k: d.get(k) for k in ("display_name", "type", "severity", "internal", "description", "source")} |
+        {"fix": (d.get("remedy") or {}).get("actions", [])[:2], "stage": (d.get("remedy") or {}).get("stage")}
+        for d in sorted(dmg, key=lambda d: -(d.get("severity") or 0))[:8]],
+        "fix_source": "engineering reference for the defect type, not derived from the line data"}
+
+
 REGISTRY = {
     "get_overview": (get_overview, "Dataset size, failure rate, period and the stable suspected parameters.", {}),
     "get_model_quality": (get_model_quality, "Held-out test-window quality (PR-AUC with CI, lift, capture curve), "
@@ -163,10 +226,25 @@ REGISTRY = {
                           "days_per_month": {"type": "number"}, "feature": {"type": "string"}}),
     "list_failed_runs": (list_failed_runs, "Failed runs in the held-out test window with model risk.",
                          {"limit": {"type": "integer"}}),
+    "get_solutions": (get_solutions, "What to change: corrective windows (with why and the test verdict), stations "
+                      "to start with and their top parameters, and the data cleaning summary. Use it for any 'what should we do' question.", {}),
+    "get_data_quality": (get_data_quality, "How missing values and outliers were handled (train-only), per split, and the "
+                         "check that cleaning kept the training data's shape.", {}),
+    "get_period": (get_period, "Production history (replayed SECOM runs, 1 Sep - 23 Oct 2026): runs, failures, passes, fail rate, "
+                   "model risk, high-risk runs, the F33 window split and the riskiest runs for a day (YYYY-MM-DD), a month (YYYY-MM), "
+                   "a range (start + end), or a phrase: today, yesterday, this week, last week, this month, last month, last year.",
+                   {"start": {"type": "string"}, "end": {"type": "string"}}),
+    "compare_periods": (compare_periods, "Compare two periods (each a date, month or phrase such as 'last month' and 'this month'): "
+                        "both periods' stats and the change in fail rate, runs and failures.",
+                        {"a": {"type": "string"}, "b": {"type": "string"}}),
+    "get_drift": (get_drift, "When the data was recorded, how much the later runs drifted from training, and whether "
+                  "interpolation or recency weighting helped (chosen on validation).", {}),
+    "get_latest_inspection": (get_latest_inspection, "The newest inspected 3D model or scan: damaged parts, severity and the "
+                              "suggested fix for each defect type.", {}),
     "explain_run": (explain_run, "Why one run is risky: top contributors and nearest real passing runs.",
                     {"index": {"type": "integer"}}),
 }
-REQUIRED = {"plan_pilot": ["feature"], "explain_run": ["index"]}
+REQUIRED = {"plan_pilot": ["feature"], "explain_run": ["index"], "get_period": ["start"], "compare_periods": ["a", "b"]}
 
 
 def schemas() -> list[dict]:

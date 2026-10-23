@@ -5,7 +5,7 @@ Run: uvicorn backend.api.main:app --host 0.0.0.0 --port 8000   (docs at /docs)
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -118,6 +118,82 @@ class SavingsRequest(BaseModel):
     days_per_month: float = cost.DEFAULTS["days_per_month"]
     feature: str | None = Field(None, description="safe-window feature to price; default = best recommended")
     false_alarms_per_day: float = 0.0
+
+
+@app.get("/api/solutions")
+def get_solutions():
+    """What to change: corrective windows, stations to work on first, and the data cleaning summary."""
+    from backend.api.solutions import solutions
+    return clean(solutions())
+
+
+@app.post("/api/maintenance/dedupe")
+def dedupe(x_admin_token: str | None = Header(None)):
+    """Remove repeated copies of models and scans (keeps the newest). Needs the deployment's admin token."""
+    from backend.assembly import service as asm
+    from backend.inspection import service as insp
+    token = os.getenv("ALERT_WEBHOOK_TOKEN")
+    if not token or x_admin_token != token:
+        raise HTTPException(403, "admin token required")
+    return {"assemblies": asm.dedupe(), "inspections": insp.dedupe()}
+
+
+@app.post("/api/maintenance/delete")
+def delete_items(ids: list[str], x_admin_token: str | None = Header(None)):
+    """Delete test models or scans by id (e.g. leftovers from checks). Needs the deployment's admin token."""
+    from backend.assembly import service as asm
+    from backend.inspection import service as insp
+    from backend import cloud
+    token = os.getenv("ALERT_WEBHOOK_TOKEN")
+    if not token or x_admin_token != token:
+        raise HTTPException(403, "admin token required")
+    done = []
+    for i in ids:
+        col, prefix = ("inspections", "inspections") if i.startswith("i_") else ("assemblies", "assemblies")
+        if cloud.CLOUD:
+            cloud.doc_delete(col, i)
+            cloud.blob_delete_prefix(f"{prefix}/{i}/")
+        else:
+            import shutil
+            shutil.rmtree((insp.INSPECTION_DIR if col == "inspections" else asm.ASSEMBLY_DIR) / os.path.basename(i), ignore_errors=True)
+        done.append(i)
+    return {"deleted": done}
+
+
+@app.get("/api/history/calendar")
+def history_calendar():
+    """Runs and failures per day of the replay window (SECOM 2008 runs replayed onto Sep-Oct 2026)."""
+    from backend.ml import replay
+    r = state.json("replay.json")
+    return {"label": r["label"], "start": r["start"], "end": r["end"], "days": replay.calendar(r)}
+
+
+@app.get("/api/history/period")
+def history_period(start: str = Query(..., description="YYYY-MM-DD, YYYY-MM, or today / yesterday / this month / last month / last year"),
+                   end: str | None = None):
+    from backend.ml import replay
+    r = state.json("replay.json")
+    s, e = replay.resolve(r, start)
+    return clean(replay.period(r, s, end or e))
+
+
+@app.get("/api/history/compare")
+def history_compare(a: str, b: str):
+    from backend.ml import replay
+    r = state.json("replay.json")
+    return clean(replay.compare(r, replay.resolve(r, a)[0], replay.resolve(r, b)[0]))
+
+
+@app.get("/api/drift")
+def get_drift():
+    """Data period, train-vs-test drift, most-shifted sensors, and the drift-aware training experiment."""
+    return _artifact("drift.json")
+
+
+@app.get("/api/data-quality")
+def data_quality():
+    """Missing values filled, outliers clipped, and the check that cleaning keeps the training data's shape."""
+    return _artifact("data_quality.json")
 
 
 @app.post("/api/savings")

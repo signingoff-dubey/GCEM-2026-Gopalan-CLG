@@ -56,6 +56,7 @@ def test_agent_calls_tools_and_passes_guard(monkeypatch):
 
 
 def test_agent_revises_once_then_reports_unverified(monkeypatch):
+    monkeypatch.setattr(agent.rag, "context_message", lambda q: (None, []))   # only the tool result as evidence
     monkeypatch.setattr(tools, "call", lambda name, args: {"rate_in": 0.0248})
     fake = FakeLLM([
         llm.Reply("", [{"id": "1", "name": "get_safe_windows", "args": {}}], "groq", "m"),
@@ -87,3 +88,12 @@ def test_chain_validation_moves_on(monkeypatch):
                         llm.Reply("not json" if provider == "groq" else '{"values": {}}', [], provider, model))
     reply, log = llm.run_chain("vision", [], validate=lambda r: None if r.content.startswith("{") else "invalid JSON")
     assert reply.provider == "openrouter" and log[0]["error"] == "invalid JSON"
+
+
+def test_rag_retrieves_the_right_passages():
+    from backend.ai import rag
+    assert rag.retrieve("how were missing values handled")[0]["source"] == "data cleaning"
+    assert rag.retrieve("is the data drifting")[0]["source"] == "drift"
+    assert rag.retrieve("what should we change on the line")[0]["source"].startswith("corrective window")
+    msg, hits = rag.context_message("why does a die crack")
+    assert "[S1]" in msg["content"] and any("die crack" in h["source"] for h in hits)
