@@ -21,12 +21,19 @@ PS #30, Digital Manufacturing. Software only.
 | **Root-cause timeline** | Rolling-window attribution shows which driver led in which period, and flags drift. |
 | **Bosch station view** | Station fail rates (re-weighted from a subsample), Sankey route links, and a station-level stability ranking. |
 | **Honest evaluation** | Chronological split only. PR-AUC and MCC are reported with bootstrap CIs, plus lift over random, a capture curve and an adversarial drift check. A random-split number is shown alongside to expose leakage inflation. |
+| **Grounded AI analyst** | A tool-calling agent (Groq, with Gemini as fallback) answers questions such as "what do I fix first and what is it worth?" A guard checks every number against the tool outputs and blocks accuracy claims, causation claims and guesses about what anonymized features mean. |
+| **One-click investigation** | It runs the whole RCA plan in parallel (quality → drift → ranking → windows → timeline → validation → stations → pilot → savings) and writes a structured, number-checked brief. |
+| **Photo / webcam capture** | It reads a process sheet from a photo or laptop webcam through a vision failover chain (Groq → Gemini → OpenRouter → cache → manual entry), range-checks the values, then scores the run. |
+| **3D-scan inspection** (separate capability) | Upload an iPad LiDAR mesh to get crack candidates from the texture and dents measured against a reference scan by ICP. A highlighted GLB is returned. Results are analyzed after upload and state the sensor's limits. |
+| **Comparison** | A capability table against 7 public SECOM/Bosch projects we checked, worded as "found in N of 7". |
 
 ## Tech Stack
 | Layer | Technology |
 |---|---|
 | ML | Python 3.12, pandas, scikit-learn, LightGBM, SHAP, statsmodels |
 | API | FastAPI, uvicorn |
+| AI | Groq (gpt-oss-20b, qwen3.8-27b), Gemini, OpenRouter: failover chain over httpx |
+| Inspection | trimesh, OpenCV, scikit-image |
 | Frontend | teammate's dashboard (`frontend-dashboard` branch) |
 
 ## File Structure
@@ -47,8 +54,13 @@ backend/
 │   ├── planted.py       # planted-fault benchmark + AI4I check
 │   ├── bosch.py         # Bosch subsample, stations, routes
 │   └── pipeline.py      # end-to-end run -> artifacts/
-├── api/                 # FastAPI app (main.py, state.py)
+├── api/                 # FastAPI app + routes (ai, capture, inspection, compare)
+├── ai/                  # LLM clients + chain, tools, grounding guard, agent, orchestrator
+├── capture/             # run sheet, vision extraction, capture store
+├── inspection/          # 3D scan load, cracks, dents, GLB export
 └── tests/
+config/llm_chain.yaml    # provider/model failover order
+scripts/probe_models.py  # pre-demo model check
 ```
 
 ## Setup & Installation
@@ -63,18 +75,30 @@ Data goes under `data/`, which is gitignored:
 ## Environment Variables
 | Variable | Description | Required |
 |---|---|---|
+| `GROQ_API_KEY` (`_2`, `_3`, …) | Groq keys, rotated on rate limits | For AI / vision |
+| `GEMINI_API_KEY` (`_2`, …) | Gemini keys | For AI / vision fallback |
+| `OPENROUTER_API_KEY` (`_2`, …) | OpenRouter free-tier keys | Optional fallback |
+| `ROOTLENS_JOBS` | worker processes for bootstrap refits (default: cores − 2, max 16) | No |
 | `CORS_ORIGINS` | comma-separated allowed origins (default `*`) | No |
+
+3D scans for inspection go in `data/scans/` (gitignored).
 
 ## How to Run
 ```bash
-make train        # ~8 min full run; `make train-quick` for a smoke run
+make train        # parallel; a few minutes on a multi-core laptop; `make train-quick` for a smoke run
 make api          # http://localhost:8000/docs
 make test
 ```
 
 ## API
-`GET /api/overview`, `/api/metrics`, `/api/ranking`, `/api/safe-windows`, `/api/pilots`, `/api/timeline`, `/api/validation/planted`, `/api/validation/ai4i`, `/api/stations`, `/api/runs`, `/api/runs/{index}`, `/api/operating-ranges`
+`GET /api/overview`, `/api/metrics`, `/api/ranking`, `/api/safe-windows`, `/api/pilots`, `/api/timeline`, `/api/validation/planted`, `/api/validation/ai4i`, `/api/stations`, `/api/runs`, `/api/runs/{index}`, `/api/operating-ranges`, `/api/compare`
 `POST /api/savings`, `/api/pilot`, `/api/score`
+
+AI: `GET /api/ai/status` · `POST /api/ai/ask`, `/api/ai/investigate`
+Capture: `POST /api/captures` (image, source=upload|webcam), `/api/captures/manual` · `GET /api/captures`, `/api/captures/latest`, `/api/captures/{id}`, `/api/captures/{id}/image`, `/api/run-sheet?index=`, `/api/run-sheet/fields`
+Inspection: `POST /api/inspection/scan`, `/api/inspection/samples/analyze` · `GET /api/inspection`, `/api/inspection/samples`, `/api/inspection/{id}`, `/api/inspection/{id}/model.glb`
+
+Model order lives in `config/llm_chain.yaml`. Run `python -m scripts.probe_models` before a demo to re-check every model against the real run sheet.
 
 ## What we claim and what we don't
 SECOM features are anonymized and the data is observational. Rankings are **statistically suspected, stability-checked** associations, not proven causes. Accuracy is never reported. Every savings figure is a range and a model estimate. Anything derived from the model's own predictions is labelled *model-estimated*. A pilot on the real line confirms or rejects each fix.
