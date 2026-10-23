@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#171c20">
+<title>RootLens Opening</title>
+<style>
+  :root {
+    --bg: #171c20;
+    --cyan: #22cede;
+    --orange: #fe6a0c;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --unit: 0.32s; /* one draw-order step */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+  /* The dashboard sits underneath the whole time; the hexagon window opens onto it. */
+  .app { position: fixed; inset: 0; background: var(--bg); }
+  .app iframe, .app img { width: 100%; height: 100%; border: 0; display: block; object-fit: cover; object-position: top left; }
+
+  .scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 10; }
+  .scene.done { display: none; }
+
+  /* 1. Hexagon and roots draw from the top vertex down, branch by branch (--d = step in the draw order). */
+  .draw { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+  .play .draw { animation: draw calc(var(--unit) * 2.2) var(--ease-out) calc(var(--d) * var(--unit)) forwards; }
+  .play .hex .draw { animation-duration: 1.1s; }
+  .play .trunk { animation-duration: 0.7s; animation-timing-function: cubic-bezier(0.5, 0, 0.2, 1); }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* 2. Each node lands when its root reaches it. */
+  .node { transform-box: fill-box; transform-origin: center; opacity: 0; transform: scale(0.2); }
+  .play .node { animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--d) * var(--unit) + 0.25s) forwards; }
+  @keyframes pop { to { opacity: 1; transform: scale(1); } }
+
+  /* 3. The lens sweeps the line; every node flickers as it passes, then one node lights orange. */
+  .scan { opacity: 0; }
+  .play .scan { animation: scan 0.9s cubic-bezier(0.45, 0, 0.25, 1) 2.55s forwards; }
+  @keyframes scan { 0% { opacity: 0; transform: translateX(-560px); } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(560px); } }
+  .play .node:not(.root) { animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--d) * var(--unit) + 0.25s) forwards, blink 0.5s ease calc(2.55s + var(--sx) * 0.9s) 1; }
+  @keyframes blink { 40% { stroke: #ffffff; } }
+  .node.root { stroke: var(--cyan); }
+  .play .node.root { animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--d) * var(--unit) + 0.25s) forwards, ignite 0.5s ease 3.25s forwards; }
+  @keyframes ignite { to { stroke: var(--orange); } }
+
+  /* 4. Wordmark and tagline. */
+  .word { clip-path: inset(0 100% 0 0); transform: translateY(26px); opacity: 0; }
+  .play .word { animation: word 0.9s var(--ease-out) 3.35s forwards; }
+  @keyframes word { to { clip-path: inset(0 0 0 0); transform: none; opacity: 1; } }
+  .tag { font: 500 38px/1 ui-monospace, 'JetBrains Mono', Consolas, monospace; letter-spacing: 0.18em; fill: #e8eef0; opacity: 0; }
+  .play .tag { animation: tag 0.8s ease 4s forwards; }
+  @keyframes tag { to { opacity: 0.6; } }
+
+  /* 5. A square locks onto the orange node. */
+  .lock { fill: none; stroke: var(--orange); stroke-width: 5; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .play .lock { animation: lock 0.7s var(--ease-out) 5.1s forwards; }
+  @keyframes lock { 0% { opacity: 0; transform: scale(2.6) rotate(45deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+
+  /* 6. The fault is traced back up its own root to the top of the line. */
+  .trace, .trace-glow { fill: none; stroke: var(--orange); stroke-linejoin: miter; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+  .trace { stroke-width: 21; }
+  .trace-glow { stroke-width: 44; opacity: 0.45; filter: url(#blur); }
+  .play .trace, .play .trace-glow { animation: draw 1.5s cubic-bezier(0.65, 0, 0.35, 1) 5.5s forwards; }
+  .top { fill: none; stroke: var(--orange); stroke-width: 8; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .play .top { animation: pulse 1s var(--ease-out) 6.95s 2; }
+  @keyframes pulse { 0% { opacity: 1; transform: scale(0.6); } 100% { opacity: 0; transform: scale(3.6); } }
+  .pulse { fill: none; stroke: var(--orange); stroke-width: 6; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .play .pulse { animation: pulse 1.2s var(--ease-out) 3.3s 1; }
+
+  .glow { opacity: 0; transition: opacity 1.6s ease; }
+  .play .glow { opacity: 1; }
+
+  .btn { position: fixed; right: 24px; bottom: 24px; z-index: 20; font: 500 0.75rem system-ui, sans-serif; color: #e8eef0b3; background: #171c20b3; border: 1px solid #ffffff26; border-radius: 999px; padding: 0.6rem 1.1rem; min-height: 44px; cursor: pointer; transition: color 0.2s, border-color 0.2s, opacity 0.3s; backdrop-filter: blur(8px); }
+  .btn:hover, .btn:focus-visible { color: #fff; border-color: #ffffff66; }
+  .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  .btn[hidden] { display: none; }
+
+  /* Reduced motion: the finished, traced logo, briefly, then a plain fade to the dashboard. */
+  @media (prefers-reduced-motion: reduce) {
+    .draw, .trace, .trace-glow { stroke-dashoffset: 0; }
+    .node, .word { opacity: 1; transform: none; clip-path: none; }
+    .node.root { stroke: var(--orange); }
+    .tag { opacity: 0.6; }
+    .lock { opacity: 1; }
+    .play * { animation: none !important; }
+    .scene { transition: opacity 0.5s; }
+  }
+</style>
+</head>
+<body>
+<!-- RootLens opening. The logo builds, the lens finds the one orange node, a square locks onto it, the fault is traced back up its
+     root to the top of the line, then the hexagon becomes a window that zooms past the screen edges onto the dashboard.
+     Dashboard: ?app=<url> (default http://127.0.0.1:5173/). If nothing answers there, dashboard-preview.png is shown instead. -->
+<div class="app" id="app" aria-label="RootLens dashboard"></div>
+
+<svg class="scene" id="scene" viewBox="360 352 1440 1500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="RootLens">
+  <defs>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <radialGradient id="halo"><stop offset="0" stop-color="#22cede" stop-opacity="0.18"/><stop offset="1" stop-color="#22cede" stop-opacity="0"/></radialGradient>
+    <clipPath id="lens"><polygon points="{{HEX}}"/></clipPath>
+    <linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#22cede" stop-opacity="0"/><stop offset="0.5" stop-color="#bff6fb" stop-opacity="0.28"/><stop offset="1" stop-color="#22cede" stop-opacity="0"/></linearGradient>
+    <!-- White shows the dark shade, black is the window onto the dashboard. The window starts shut. -->
+    <mask id="window" maskUnits="userSpaceOnUse" x="-40000" y="-40000" width="80000" height="80000">
+      <rect x="-40000" y="-40000" width="80000" height="80000" fill="#fff"/>
+      <g class="zoomer"><polygon id="hole" points="{{HEX}}" fill="#000" fill-opacity="0"/></g>
+    </mask>
+  </defs>
+
+  <rect x="-40000" y="-40000" width="80000" height="80000" fill="#171c20" mask="url(#window)"/>
+
+  <g class="zoomer">
+    <g id="fade">
+      <circle class="glow" cx="1079.5" cy="927.5" r="760" fill="url(#halo)"/>
+      <g id="lines">
+{{ROOTS}}
+        <g clip-path="url(#lens)"><rect class="scan" x="989.5" y="430" width="180" height="1000" fill="url(#beam)"/></g>
+        <path class="trace-glow" pathLength="1" d="{{TRACE}}"/>
+        <path class="trace" pathLength="1" d="{{TRACE}}"/>
+{{NODES}}
+        <circle class="pulse" cx="1268.1" cy="1156.4" r="22.75"/>
+        <rect class="lock" x="1218.1" y="1106.4" width="100" height="100" rx="6"/>
+        <circle class="top" cx="1079.5" cy="440" r="26"/>
+      </g>
+      <g id="brand">
+{{WORD}}
+        <text class="tag" x="1079.5" y="1808" text-anchor="middle">ROOT-CAUSE ANALYSIS · DIGITAL MANUFACTURING</text>
+      </g>
+    </g>
+{{HEXLINE}}
+  </g>
+</svg>
+
+<button type="button" class="btn" id="skip">Skip intro</button>
+<button type="button" class="btn" id="replay" hidden>Replay opening</button>
+
+<script>
+(() => {
+  const scene = document.getElementById('scene');
+  const hole = document.getElementById('hole');
+  const lines = document.getElementById('lines');
+  const brand = document.getElementById('brand');
+  const zoomers = scene.querySelectorAll('.zoomer');
+  const skip = document.getElementById('skip');
+  const replay = document.getElementById('replay');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SPEED = 1.3; // whole opening runs this much faster than the timings written in the CSS
+  const ZOOM_AT = reduced ? 1200 : 7400 / SPEED; // ms: when the window opens by itself
+  const ZOOM_MS = reduced ? 500 : 1500 / SPEED;
+  const CX = 1079.5, CY = 927.5; // hexagon centre, the zoom origin
+  let timer = 0, raf = 0, zooming = false;
+
+  // Dashboard underneath: the live app if it answers, the saved screenshot if not.
+  const appUrl = new URLSearchParams(location.search).get('app') || 'http://127.0.0.1:5173/';
+  const app = document.getElementById('app');
+  const showShot = () => { app.innerHTML = '<img src="dashboard-preview.png" alt="RootLens dashboard">'; };
+  fetch(appUrl, { mode: 'no-cors', signal: AbortSignal.timeout(1500) })
+    .then(() => { app.innerHTML = `<iframe src="${appUrl}" title="RootLens dashboard"></iframe>`; })
+    .catch(showShot);
+
+  // The sweep reaches each node at a time set by its x position, so the flicker follows the lens.
+  const vb = scene.viewBox.baseVal;
+  scene.querySelectorAll('.node').forEach((n) => n.style.setProperty('--sx', ((+n.getAttribute('cx') - vb.x) / vb.width).toFixed(3)));
+
+  const setZoom = (s) => zoomers.forEach((g) => g.setAttribute('transform', `translate(${CX} ${CY}) scale(${s}) translate(${-CX} ${-CY})`));
+  const easeIn = (p) => p * p * p * p;
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+  // The hexagon turns into a window and grows until its edges are past every corner of the screen.
+  const zoom = (ms) => {
+    if (zooming) return;
+    zooming = true;
+    clearTimeout(timer);
+    skip.hidden = true;
+    const t0 = performance.now();
+    const end = 26;
+    const frame = (now) => {
+      const p = clamp01((now - t0) / ms);
+      hole.setAttribute('fill-opacity', clamp01(p * 5).toFixed(3));
+      brand.style.opacity = String(1 - clamp01(p * 4));
+      lines.style.opacity = String(1 - clamp01(p * 2.2));
+      setZoom(reduced ? 1 : 1 + (end - 1) * easeIn(p));
+      if (reduced) scene.style.opacity = String(1 - p);
+      if (p < 1) { raf = requestAnimationFrame(frame); return; }
+      scene.classList.add('done');
+      replay.hidden = false;
+    };
+    raf = requestAnimationFrame(frame);
+  };
+
+  const play = () => {
+    cancelAnimationFrame(raf);
+    zooming = false;
+    setZoom(1);
+    hole.setAttribute('fill-opacity', '0');
+    brand.style.opacity = lines.style.opacity = scene.style.opacity = '';
+    scene.classList.remove('play', 'done');
+    void scene.getBoundingClientRect(); // restart the CSS animations
+    scene.classList.add('play');
+    document.getAnimations().forEach((a) => { a.playbackRate = SPEED; });
+    skip.hidden = false;
+    replay.hidden = true;
+    timer = setTimeout(() => zoom(ZOOM_MS), ZOOM_AT);
+  };
+
+  skip.addEventListener('click', () => zoom(700));
+  replay.addEventListener('click', play);
+  addEventListener('keydown', (e) => { if (['Escape', 'Enter', ' '].includes(e.key) && !zooming) { e.preventDefault(); zoom(700); } });
+
+  play();
+})();
+</script>
+</body>
+</html>
