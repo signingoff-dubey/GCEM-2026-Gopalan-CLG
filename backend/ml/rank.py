@@ -7,7 +7,8 @@ import shap
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from backend.config import CORR_GROUP_THRESHOLD, N_BOOTSTRAP, SEED, STABLE_FREQ, TOP_K
+from backend.config import (CORR_GROUP_THRESHOLD, N_BOOTSTRAP, N_PERMUTATIONS, SEED,
+                            STABLE_FREQ, TOP_K)
 from backend.ml.features import Preprocessor, base_feature, correlation_groups
 from backend.ml.train import fit_lgbm
 
@@ -41,6 +42,20 @@ def bootstrap_ranks(X, y, n_estimators, impute, B=N_BOOTSTRAP, seed=SEED, progre
     return {"ranks": R, "importance": I, "sec_per_bootstrap": float(np.mean(times))}
 
 
+def permutation_null(X, y, n_estimators, impute, n_perm=N_PERMUTATIONS, seed=SEED) -> dict:
+    """Refit on shuffled labels. The 95th percentile of the *largest* importance across
+    permutations is the bar a real driver must clear (max-statistic, family-wise).
+    Bootstrap refits alone reuse the same noise, so a noise winner can look 'stable'."""
+    rng = np.random.default_rng(seed + 7)
+    max_imp = []
+    for i in range(n_perm):
+        yp = pd.Series(rng.permutation(y.to_numpy()), index=y.index)
+        t = fit_lgbm(X, yp, X, yp, impute=impute, n_estimators=n_estimators, seed=seed + 500 + i)
+        max_imp.append(float(shap_importance(t, X).max()))
+    return {"threshold": float(np.percentile(max_imp, 95)), "max_importance": max_imp,
+            "n_permutations": n_perm}
+
+
 def l1_stability(X, y, n_runs=N_BOOTSTRAP, frac=0.5, C=0.05, seed=SEED) -> pd.Series:
     """Fraction of half-subsamples in which L1 logistic keeps a non-zero coefficient."""
     rng = np.random.default_rng(seed)
@@ -63,6 +78,7 @@ def build_ranking(X, y, n_estimators, impute, B=N_BOOTSTRAP, top_k=TOP_K,
     R, I = boot["ranks"], boot["importance"]
     in_top = (R <= top_k).mean(axis=1)
     l1 = l1_stability(X, y)
+    null = permutation_null(X, y, n_estimators, impute)
 
     table = pd.DataFrame({
         "mean_rank": R.mean(axis=1),
@@ -73,7 +89,8 @@ def build_ranking(X, y, n_estimators, impute, B=N_BOOTSTRAP, top_k=TOP_K,
         "top_k_freq": in_top,
         "l1_selection_freq": l1.reindex(R.index).fillna(0.0),
     }).sort_values(["top_k_freq", "mean_rank"], ascending=[False, True])
-    table["stable"] = table["top_k_freq"] >= stable_freq
+    table["beats_null"] = table["mean_abs_shap"] > null["threshold"]
+    table["stable"] = (table["top_k_freq"] >= stable_freq) & table["beats_null"]
 
     # feature groups: correlation clusters on the kept parameters (never called stations)
     pre = Preprocessor(impute=True).fit(X)
@@ -90,13 +107,15 @@ def build_ranking(X, y, n_estimators, impute, B=N_BOOTSTRAP, top_k=TOP_K,
     shap_top = table.sort_values("mean_rank").head(top_k).index
     l1_top = l1.head(top_k).index
     features = [
-        {"feature": f, **{k: (bool(v) if k == "stable" else v if k == "group" else float(v))
+        {"feature": f, **{k: (bool(v) if k in ("stable", "beats_null") else v if k == "group" else float(v))
                            for k, v in row.items()}}
         for f, row in table.head(50).iterrows()
     ]
     return {
         "method": f"LightGBM mean |SHAP| over {B} bootstrap refits; stable if in top-{top_k} "
-                  f"in >= {int(stable_freq * 100)}% of refits",
+                  f"in >= {int(stable_freq * 100)}% of refits AND importance beats the 95th percentile "
+                  f"of the max importance under {null['n_permutations']} label permutations",
+        "permutation_null": null,
         "n_bootstrap": B,
         "sec_per_bootstrap": boot["sec_per_bootstrap"],
         "top_k": top_k,
