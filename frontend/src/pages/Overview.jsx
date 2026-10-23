@@ -1,3 +1,4 @@
+import Solutions from '../components/Solutions';
 import { ArrowRight, ShieldCheck, ShieldQuestion } from 'lucide-react';
 import StatCards from '../components/dashboard/StatCards';
 import { ChartCard, LineChart } from '../components/charts';
@@ -150,6 +151,7 @@ const Body = ({ overview, metrics, ranking, daily }) => {
         </ChartCard>
         <TopDrivers ranking={ranking} />
       </div>
+      <Solutions />
       <div className="grid gap-[var(--gap)] xl:grid-cols-2">
         <DataHandling metrics={metrics} overview={overview} />
         <Confusion test={test} />

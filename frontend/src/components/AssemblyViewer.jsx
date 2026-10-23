@@ -50,7 +50,7 @@ const Btn = ({ onClick, active, disabled, children, title, primary, label }) => 
   </button>
 );
 
-const AssemblyViewer = ({ manifest, height = 520, onSelect }) => {
+const AssemblyViewer = ({ manifest, height = 520, onSelect, onViewDamage }) => {
   const host = useRef(null);
   const api = useRef({});
   const [status, setStatus] = useState({ loading: true, error: '' });
@@ -444,7 +444,7 @@ const AssemblyViewer = ({ manifest, height = 520, onSelect }) => {
 
 
       <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-black/60 p-2 text-white backdrop-blur">
-        <Btn primary onClick={() => api.current.viewDamage?.()} disabled={!ready || !plan} title={plan ? 'Take it apart, isolate the damaged part, switch to thermal' : 'No damage annotations in this model'}>
+        <Btn primary onClick={() => { api.current.viewDamage?.(); onViewDamage?.(); }} disabled={!ready || !plan} title={plan ? 'Take it apart, isolate the damaged part, switch to thermal' : 'No damage annotations in this model'}>
           <ScanEye size={15} /> View damage
         </Btn>
         {hasAnim ? (

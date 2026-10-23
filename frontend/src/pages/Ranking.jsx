@@ -1,3 +1,4 @@
+import Solutions from '../components/Solutions';
 import { useState } from 'react';
 import { ArrowRight, Info } from 'lucide-react';
 import { CardTitle, ChipToggle } from '../components/ui';
@@ -117,7 +118,12 @@ const Body = ({ ranking, windows }) => {
 
 const Ranking = () => {
   const q = useApi(['/api/ranking', '/api/safe-windows']);
-  return <Gate q={q} what="The ranking">{([ranking, sw]) => <Body ranking={ranking} windows={sw.windows} />}</Gate>;
+  return (
+    <div className="flex flex-col gap-[var(--gap)]">
+      <Gate q={q} what="The ranking">{([ranking, sw]) => <Body ranking={ranking} windows={sw.windows} />}</Gate>
+      <Solutions />
+    </div>
+  );
 };
 
 export default Ranking;

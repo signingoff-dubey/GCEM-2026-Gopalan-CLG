@@ -5,6 +5,9 @@ import Gate, { StatusCard } from '../components/ui/Gate';
 import ModelViewer from '../components/ModelViewer';
 import DamagePanel from '../components/DamagePanel';
 import AssemblyViewer from '../components/AssemblyViewer';
+import CallStatus from '../components/CallStatus';
+import Remedy from '../components/Remedy';
+import { askAssistant } from '../components/AssistantDock';
 import { api, post, postForm } from '../lib/api';
 import { num, pct } from '../lib/format';
 import { useApi } from '../lib/useApi';
@@ -169,6 +172,9 @@ const PartDamage = ({ p }) => (
   <section className="mt-4 rounded-2xl bg-ink/5 p-3.5">
     <h3 className="flex items-center justify-between gap-2 text-sm font-semibold">
       <span>Damage found in the parts</span>
+      {p.damage?.length > 0 && (
+        <button type="button" onClick={() => askAssistant('What is wrong with the latest inspected part, why does it happen and how do we fix it?')} className="rounded-full bg-ink/8 px-2.5 py-1 text-xs font-semibold hover:bg-ink/12">Ask AI for a fix</button>
+      )}
       <span className="text-xs font-medium text-ink/55">
         {num(p.counts?.damaged_parts, 0)} damaged, {num(p.counts?.damage_markers, 0)} marks{p.thermal?.max_c != null ? `, hottest ${p.thermal.max_c} °C (simulated)` : ''}
       </span>
@@ -182,6 +188,7 @@ const PartDamage = ({ p }) => (
               {d.type}{d.internal ? ', internal' : ', external'}{d.severity != null ? `, severity ${d.severity}` : ''}{d.temp_c != null ? `, ${d.temp_c} °C (simulated)` : ''}
             </p>
             {d.description && <p className="mt-0.5 text-xs text-ink/60">{d.description}</p>}
+            <Remedy r={d.remedy} />
           </li>
         ))}
       </ul>
@@ -190,6 +197,32 @@ const PartDamage = ({ p }) => (
     )}
   </section>
 );
+
+// Multi-part scan: the 3D viewer; View damage alerts once for this scan (call, WhatsApp, email per settings).
+const ScanParts = ({ r }) => {
+  const [alert, setAlert] = useState(null);
+  const onViewDamage = async () => {
+    if (!r.parts?.damage?.length) return;
+    try {
+      const out = await post('/api/alerts/view-damage', { id: r.id }, { signal: AbortSignal.timeout(30000) });
+      const call = (out.results ?? []).find((x) => x.channel === 'call');
+      setAlert({ callId: call?.ok ? call.attempt_id : null, note: out.sent ? (call?.ok ? '' : call?.result) : out.reason });
+    } catch (e) {
+      setAlert({ callId: null, note: errText(e) });
+    }
+  };
+  return (
+    <>
+      <AssemblyViewer key={r.parts.model_url} manifest={{ ...r.parts, label: r.inputs?.mesh }} onViewDamage={onViewDamage} />
+      {alert && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink/60">
+          {alert.callId && <CallStatus id={alert.callId} />}
+          {alert.note && <span>Alert: {alert.note}</span>}
+        </div>
+      )}
+    </>
+  );
+};
 
 const Result = ({ r }) => (
   <section className="card" aria-live="polite">
@@ -206,7 +239,7 @@ const Result = ({ r }) => (
       Scan result
     </CardTitle>
     {r.parts ? (
-      <AssemblyViewer key={r.parts.model_url} manifest={{ ...r.parts, label: r.inputs?.mesh }} />
+      <ScanParts r={r} />
     ) : r.model_url ? (
       <ModelViewer key={r.model_url} url={r.model_url} />
     ) : (
@@ -228,6 +261,8 @@ const Result = ({ r }) => (
     {r.artificial && <p className="mt-2 text-xs text-ink/65">Marked as an artificial defect: this tests the check and is not a finding about a real part.</p>}
 
     {r.parts && <PartDamage p={r.parts} />}
+    {r.remedies?.crack && <Remedy r={r.remedies.crack} open />}
+    {r.remedies?.dent && <Remedy r={r.remedies.dent} />}
     <div className="mt-4 grid gap-3 lg:grid-cols-3">
       <section className="rounded-2xl bg-ink/5 p-3.5">
         <h3 className="text-sm font-semibold">Mesh</h3>
@@ -290,20 +325,22 @@ const MODES = ['View damage (3D model)', 'Surface scan'];
 // #/inspection/<id>: a_ / demo_ ids are 3D models (View damage), i_ ids are surface scans.
 // Phones the alert number now; the Sarvam agent reads out this inspection's findings and takes questions.
 const PlaceCall = ({ itemId }) => {
-  const [state, setState] = useState({ busy: false, ok: null, text: '' });
-  useEffect(() => setState({ busy: false, ok: null, text: '' }), [itemId]);
+  const [state, setState] = useState({ busy: false, ok: null, text: '', callId: null });
+  useEffect(() => setState({ busy: false, ok: null, text: '', callId: null }), [itemId]);
   const call = async () => {
     setState({ busy: true, ok: null, text: '' });
     try {
       const r = await post('/api/alerts/call', { id: itemId }, { signal: AbortSignal.timeout(30000) });
       const res = r.results?.[0];
-      setState({ busy: false, ok: !!res?.ok, text: res?.ok ? `${res.result}, ${r.findings} finding${r.findings === 1 ? '' : 's'}` : res?.result || 'Call not placed' });
+      setState({ busy: false, ok: !!res?.ok, callId: res?.ok ? res.attempt_id : null,
+        text: res?.ok ? `${r.findings} finding${r.findings === 1 ? '' : 's'} reported` : res?.result || 'Call not placed' });
     } catch (e) {
       setState({ busy: false, ok: false, text: errText(e) });
     }
   };
   return (
     <div className="flex items-center gap-3">
+      {state.callId && <CallStatus id={state.callId} />}
       {state.text && (
         <span role="status" className={`hidden max-w-xs truncate text-sm font-medium sm:block ${state.ok ? 'text-white/80' : 'text-bad'}`} title={state.text}>
           {state.text}

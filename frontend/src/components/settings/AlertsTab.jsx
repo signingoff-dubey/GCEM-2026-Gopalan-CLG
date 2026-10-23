@@ -135,6 +135,24 @@ const AlertsTab = () => {
         </div>
       </section>
 
+      {data.calls?.length > 0 && (
+        <section className="card xl:col-span-2">
+          <CardTitle sub="Sarvam reports how each call ended (picked up and talk time, not picked up, declined, failed). Refreshes every 5 s.">Calls</CardTitle>
+          <ul className="flex flex-col gap-1.5">
+            {data.calls.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ink/5 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate font-medium">{c.subject}</span>
+                <span className="flex items-center gap-2 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${c.status === 'connected' ? 'bg-good/15 text-good' : c.status === 'dialing' ? 'bg-accent/15 text-accent-deep' : 'bg-warn/15 text-warn'}`}>{c.label}</span>
+                  {c.duration_s != null && <span className="tabular">{Math.floor(c.duration_s / 60)}:{String(Math.round(c.duration_s % 60)).padStart(2, '0')}</span>}
+                  <span className="text-ink/50">{when(c.at)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="card">
         <CardTitle sub="Newest first.">Sent alerts</CardTitle>
         {data.log.length === 0 ? (

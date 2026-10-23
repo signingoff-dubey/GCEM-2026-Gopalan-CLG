@@ -3,6 +3,10 @@ import { Box, Flame, LoaderCircle, ScanEye, TriangleAlert, Upload } from 'lucide
 import { CardTitle } from './ui';
 import AssemblyViewer from './AssemblyViewer';
 import { api, post, postForm } from '../lib/api';
+import CallStatus from './CallStatus';
+import Remedy from './Remedy';
+import Solutions from './Solutions';
+import { askAssistant } from './AssistantDock';
 import { useApi } from '../lib/useApi';
 
 // "View damage": a multi-part model (e.g. a Blender export) with simulated internal damage and a thermal layer.
@@ -43,7 +47,7 @@ const Loader = ({ onLoaded, busy, setBusy, setError }) => {
       <button
         type="button"
         disabled={busy}
-        onClick={() => run(() => api('/api/assembly/demo'))}
+        onClick={() => run(() => api('/api/assembly/demo', { signal: AbortSignal.timeout(120000) }))}
         className="flex w-full items-center gap-3 rounded-2xl bg-accent/15 p-3 text-left ring-1 ring-accent/30 transition-colors hover:bg-accent/25 disabled:opacity-50"
       >
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-on-accent"><ScanEye size={18} /></span>
@@ -71,7 +75,7 @@ const Loader = ({ onLoaded, busy, setBusy, setError }) => {
           <ul className="mt-2 flex flex-col gap-1.5">
             {files.map((f) => (
               <li key={f.name}>
-                <button type="button" disabled={busy} onClick={() => run(() => post('/api/assembly/samples/load', { name: f.name }))} className="flex w-full items-center gap-2 rounded-xl bg-ink/5 px-3 py-2 text-left text-sm hover:bg-ink/10 disabled:opacity-50">
+                <button type="button" disabled={busy} onClick={() => run(() => post('/api/assembly/samples/load', { name: f.name }, { signal: AbortSignal.timeout(180000) }))} className="flex w-full items-center gap-2 rounded-xl bg-ink/5 px-3 py-2 text-left text-sm hover:bg-ink/10 disabled:opacity-50">
                   <Box size={14} className="shrink-0 text-ink/50" /> <span className="truncate">{f.label}</span>
                   <span className="ml-auto shrink-0 text-xs uppercase text-ink/45">{f.kind}</span>
                 </button>
@@ -87,7 +91,14 @@ const Loader = ({ onLoaded, busy, setBusy, setError }) => {
 
 const Summary = ({ m }) => (
   <section className="card">
-    <CardTitle sub={m.note}>{m.label}</CardTitle>
+    <CardTitle
+      sub={m.note}
+      action={m.damage?.length > 0 && (
+        <button type="button" onClick={() => askAssistant(`What is wrong with the latest inspected part (${m.label}), why does it happen and how do we fix it?`)} className="btn-ghost h-9 px-3 text-sm">Ask AI for a fix</button>
+      )}
+    >
+      {m.label}
+    </CardTitle>
     <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
       {[['Parts', m.counts.parts], ['Damaged parts', m.counts.damaged_parts], ['Animations', m.counts.animations], ['Hottest', m.thermal?.max_c != null ? `${m.thermal.max_c} °C` : '-']].map(([k, v]) => (
         <div key={k} className="rounded-xl bg-ink/5 px-3 py-2">
@@ -102,10 +113,12 @@ const Summary = ({ m }) => (
           <li key={d.part} className="rounded-xl bg-bad/10 p-3 text-sm">
             <p className="flex items-center gap-2 font-semibold"><TriangleAlert size={14} className="text-bad" /> {d.display_name}: <span className="capitalize">{d.type}</span>{d.internal ? ', internal' : ''}</p>
             {d.description && <p className="mt-0.5 text-ink/70">{d.description}</p>}
+            {d.source && <p className="mt-0.5 text-[11px] text-ink/50">Found by: {d.source}</p>}
             <p className="mt-1 text-xs text-ink/55">
               {d.severity != null && <>Severity {d.severity}. </>}
               {d.temp_c != null && <><Flame size={11} className="inline" /> {d.temp_c} °C (simulated).</>}
             </p>
+            <Remedy r={d.remedy} />
           </li>
         ))}
       </ul>
@@ -155,6 +168,18 @@ const History = ({ q, current, onOpen }) => {
 
 const DamagePanel = ({ id, onCurrent }) => {
   const [manifest, setManifest] = useState(null);
+  const [alertState, setAlertState] = useState(null);   // { callId, note } after View damage
+  useEffect(() => setAlertState(null), [manifest?.id]);
+  const onViewDamage = async () => {
+    if (!manifest?.damage?.length) return;
+    try {
+      const r = await post('/api/alerts/view-damage', { id: manifest.id }, { signal: AbortSignal.timeout(30000) });
+      const call = (r.results ?? []).find((x) => x.channel === 'call');
+      setAlertState({ callId: call?.ok ? call.attempt_id : null, note: r.sent ? (call?.ok ? '' : call?.result) : r.reason });
+    } catch (e) {
+      setAlertState({ callId: null, note: errText(e) });
+    }
+  };
   useEffect(() => onCurrent?.(manifest?.id), [manifest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -188,10 +213,17 @@ const DamagePanel = ({ id, onCurrent }) => {
         {manifest ? (
           <>
             <section className="card">
-              <AssemblyViewer manifest={manifest} />
+              <AssemblyViewer manifest={manifest} onViewDamage={onViewDamage} />
+              {alertState && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink/60">
+                  {alertState.callId && <CallStatus id={alertState.callId} />}
+                  {alertState.note && <span>Alert: {alertState.note}</span>}
+                </div>
+              )}
               <p className="mt-2 text-xs text-ink/55">Drag to rotate, scroll to zoom, click a part for details. Temperatures are simulated{manifest.warnings?.some((w) => w.includes('inferred')) ? '; damage is read from the object names in the file' : ''}.</p>
             </section>
             <Summary m={manifest} />
+            <Solutions compact title="Process changes from the line data (SECOM)" />
           </>
         ) : (
           <section className="card grid place-items-center py-16 text-center">
