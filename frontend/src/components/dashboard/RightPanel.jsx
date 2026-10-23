@@ -35,7 +35,7 @@ const Profile = ({ overview }) => {
   );
 };
 
-// Most recent recorded failures in the test window. The list endpoint carries the model's own estimate, not a risk band.
+// Most recent recorded failures in the test window. The list carries the model's own estimate and its risk band.
 const RecentFails = () => {
   const { data, error, loading } = useApi('/api/runs?split=test&fails_only=true&limit=200');
   const runs = data ? [...data.runs].reverse().slice(0, 3) : [];
@@ -43,7 +43,7 @@ const RecentFails = () => {
     <section>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">Recent failed runs</h2>
-        <button type="button" onClick={() => navigate('captures')} className="text-sm text-white/60 hover:text-white">View all</button>
+        <button type="button" onClick={() => navigate('captures', 'history')} className="text-sm text-white/60 hover:text-white">View all</button>
       </div>
       {loading && <p className="mt-3 text-xs text-white/55">Loading...</p>}
       {error && <p className="mt-3 text-xs text-white/55">{error.status === 503 ? 'Not generated yet.' : 'Could not load runs.'}</p>}
