@@ -1,5 +1,5 @@
 """AI endpoints: grounded Q&A agent and one-click investigation."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
@@ -53,13 +53,16 @@ async def investigate(req: InvestigateRequest):
 
 
 class VoiceRequest(BaseModel):
-    question: str = Field(..., min_length=1, max_length=1000)
+    question: str | None = Field(None, max_length=1000)
     caller: str | None = None
 
 
 @router.post("/voice")
-async def voice(req: VoiceRequest):
+async def voice(req: VoiceRequest | None = None, question: str | None = Query(None, max_length=1000)):
     """HTTP tool for the Sarvam phone agent: a spoken answer about any date, month or the analysis.
     Read-only like /api/ai/ask (same public analysis data), so the phone agent needs no secret."""
     from backend.ai import voice as v
-    return await run_in_threadpool(v.answer, req.question)
+    q = (question or (req.question if req else None) or "").strip()   # Sarvam may send it as a query param or JSON body
+    if not q:
+        raise HTTPException(422, "question is required")
+    return await run_in_threadpool(v.answer, q)
