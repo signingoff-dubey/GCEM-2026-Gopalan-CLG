@@ -18,6 +18,7 @@ from backend.api.alert_routes import router as alert_router
 from backend.api.assembly_routes import router as assembly_router
 from backend.api.capture_routes import router as capture_router
 from backend.api.compare import router as compare_router
+from backend.api.export_routes import router as export_router
 from backend.api.inspection_routes import router as inspection_router
 from backend.api.state import ArtifactMissing, state
 from backend.config import DISCLAIMER
@@ -140,7 +141,7 @@ def dedupe(x_admin_token: str | None = Header(None)):
 
 @app.post("/api/maintenance/delete")
 def delete_items(ids: list[str], x_admin_token: str | None = Header(None)):
-    """Delete test models or scans by id (e.g. leftovers from checks). Needs the deployment's admin token."""
+    """Delete test models, scans or captures by id (e.g. leftovers from checks). Needs the deployment's admin token."""
     from backend.assembly import service as asm
     from backend.inspection import service as insp
     from backend import cloud
@@ -149,6 +150,15 @@ def delete_items(ids: list[str], x_admin_token: str | None = Header(None)):
         raise HTTPException(403, "admin token required")
     done = []
     for i in ids:
+        if i.startswith("c_"):   # a capture: its row and photo
+            from backend.capture import store
+            if cloud.CLOUD:
+                cloud.doc_delete("captures", i)
+                cloud.blob_delete_prefix(f"captures/{i}")
+            else:
+                store.delete(i)
+            done.append(i)
+            continue
         col, prefix = ("inspections", "inspections") if i.startswith("i_") else ("assemblies", "assemblies")
         if cloud.CLOUD:
             cloud.doc_delete(col, i)
@@ -264,6 +274,7 @@ app.include_router(ai_router)
 app.include_router(capture_router)
 app.include_router(inspection_router)
 app.include_router(compare_router)
+app.include_router(export_router)
 app.include_router(assembly_router)
 app.include_router(activity_router)
 app.include_router(alert_router)

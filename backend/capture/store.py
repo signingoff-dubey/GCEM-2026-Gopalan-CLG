@@ -82,3 +82,10 @@ def listing(limit=50) -> list[dict]:
 
 def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
+
+
+def delete(cid: str) -> None:
+    """Remove one local capture and its photo."""
+    with _conn() as c:
+        c.execute("DELETE FROM captures WHERE id = ?", (cid,))
+    image_path(cid).unlink(missing_ok=True)

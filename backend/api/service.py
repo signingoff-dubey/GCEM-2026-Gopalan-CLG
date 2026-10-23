@@ -117,6 +117,13 @@ def score_values(values: dict) -> dict:
                 needs_review.append(k)
         row[k] = v
     out = explain_row(row)
+    # sensors the health monitor flags as bad (stuck, silent, mostly out of range): the reading is used but marked
+    try:
+        from backend.api.export_routes import health_of
+        suspect = [{"sensor": k, "reasons": h["reasons"]} for k in values
+                   if k not in unknown and (h := health_of(k)) and h["status"] == "bad"]
+    except Exception:  # noqa: BLE001 - scoring never fails because the monitor could not run
+        suspect = []
     out.update({"unknown_parameters": unknown, "needs_review": needs_review,
-                "provided": len(values) - len(unknown)})
+                "provided": len(values) - len(unknown), "suspect_sensors": suspect})
     return clean(out)
