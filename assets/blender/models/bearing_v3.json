@@ -1,0 +1,80 @@
+{
+ "family": "bearing",
+ "variant": 3,
+ "fault_types": [
+  "crack",
+  "debris",
+  "fracture",
+  "missing part",
+  "spall"
+ ],
+ "n_fault_objects": 11,
+ "faults": [
+  {
+   "object": "OuterRace",
+   "damage_type": "spall",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "OuterRace_Crack",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "MissingBall_Ghost",
+   "damage_type": "missing part",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Ball_5_halfA",
+   "damage_type": "fracture",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Ball_5_halfB",
+   "damage_type": "fracture",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Debris_0",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_1",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_2",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_3",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_4",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_5",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  }
+ ]
+}

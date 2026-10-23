@@ -1,0 +1,107 @@
+{
+ "family": "gear",
+ "variant": 2,
+ "fault_types": [
+  "overheating",
+  "pitting"
+ ],
+ "n_fault_objects": 16,
+ "faults": [
+  {
+   "object": "OutputGear_Pit00",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit01",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit02",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit10",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit11",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit12",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit20",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit21",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit22",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit30",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit31",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit32",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit40",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit41",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "OutputGear_Pit42",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "BearingLow_Out_OVERHEATED",
+   "damage_type": "overheating",
+   "severity": 0.7,
+   "marker": false
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+{
+ "family": "bearing",
+ "variant": 2,
+ "fault_types": [
+  "crack",
+  "missing part",
+  "spall"
+ ],
+ "n_fault_objects": 3,
+ "faults": [
+  {
+   "object": "OuterRace",
+   "damage_type": "spall",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "OuterRace_Crack",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "MissingBall_Ghost",
+   "damage_type": "missing part",
+   "severity": 0.9,
+   "marker": false
+  }
+ ]
+}

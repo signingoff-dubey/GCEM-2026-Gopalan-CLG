@@ -1,0 +1,120 @@
+{
+ "family": "phone_teardown",
+ "variant": 3,
+ "fault_types": [
+  "burn",
+  "crack",
+  "dead pixels"
+ ],
+ "n_fault_objects": 18,
+ "faults": [
+  {
+   "object": "PMIC_BURNT",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "PMIC_Blister0",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "PMIC_Blister1",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "PMIC_Scorch",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  },
+  {
+   "object": "Display_CRACKED",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Display_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack3",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack4",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack5",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack6",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack7",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack8",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing6",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing13",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing22",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_DeadLine",
+   "damage_type": "dead pixels",
+   "severity": 0.6,
+   "marker": true
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "family": "pump",
+ "variant": 2,
+ "fault_types": [
+  "leak",
+  "tear"
+ ],
+ "n_fault_objects": 8,
+ "faults": [
+  {
+   "object": "Seal_TORN",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Seal_Tear0",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Tear1",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Tear2",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Leak",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop2",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  }
+ ]
+}

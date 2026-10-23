@@ -1,0 +1,328 @@
+{
+ "tagged": {
+  "objects_tp": 222,
+  "objects_fp": 0,
+  "objects_fn": 0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "files_with_fault_flagged": 15,
+  "files": 15,
+  "by_family": {
+   "bearing": {
+    "tp": 23,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "gear": {
+    "tp": 46,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "pcb": {
+    "tp": 54,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "phone_teardown": {
+    "tp": 45,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   },
+   "pump": {
+    "tp": 54,
+    "fp": 0,
+    "fn": 0,
+    "recall": 1.0
+   }
+  },
+  "per_file": [
+   {
+    "file": "bearing_v1",
+    "truth": 9,
+    "found": 9,
+    "tp": 9,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "bearing_v2",
+    "truth": 3,
+    "found": 3,
+    "tp": 3,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "bearing_v3",
+    "truth": 11,
+    "found": 11,
+    "tp": 11,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "gear_v1",
+    "truth": 8,
+    "found": 8,
+    "tp": 8,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "gear_v2",
+    "truth": 16,
+    "found": 16,
+    "tp": 16,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "gear_v3",
+    "truth": 22,
+    "found": 22,
+    "tp": 22,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pcb_v1",
+    "truth": 16,
+    "found": 16,
+    "tp": 16,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pcb_v2",
+    "truth": 11,
+    "found": 11,
+    "tp": 11,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pcb_v3",
+    "truth": 27,
+    "found": 27,
+    "tp": 27,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "phone_teardown_v1",
+    "truth": 18,
+    "found": 18,
+    "tp": 18,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "phone_teardown_v2",
+    "truth": 9,
+    "found": 9,
+    "tp": 9,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "phone_teardown_v3",
+    "truth": 18,
+    "found": 18,
+    "tp": 18,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pump_v1",
+    "truth": 19,
+    "found": 19,
+    "tp": 19,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pump_v2",
+    "truth": 8,
+    "found": 8,
+    "tp": 8,
+    "fp": 0,
+    "fn": 0
+   },
+   {
+    "file": "pump_v3",
+    "truth": 27,
+    "found": 27,
+    "tp": 27,
+    "fp": 0,
+    "fn": 0
+   }
+  ]
+ },
+ "stripped": {
+  "objects_tp": 183,
+  "objects_fp": 290,
+  "objects_fn": 39,
+  "precision": 0.386892177589852,
+  "recall": 0.8243243243243243,
+  "files_with_fault_flagged": 15,
+  "files": 15,
+  "by_family": {
+   "bearing": {
+    "tp": 15,
+    "fp": 1,
+    "fn": 8,
+    "recall": 0.6521739130434783
+   },
+   "gear": {
+    "tp": 40,
+    "fp": 18,
+    "fn": 6,
+    "recall": 0.8695652173913043
+   },
+   "pcb": {
+    "tp": 50,
+    "fp": 259,
+    "fn": 4,
+    "recall": 0.9259259259259259
+   },
+   "phone_teardown": {
+    "tp": 36,
+    "fp": 12,
+    "fn": 9,
+    "recall": 0.8
+   },
+   "pump": {
+    "tp": 42,
+    "fp": 0,
+    "fn": 12,
+    "recall": 0.7777777777777778
+   }
+  },
+  "per_file": [
+   {
+    "file": "bearing_v1",
+    "truth": 9,
+    "found": 6,
+    "tp": 6,
+    "fp": 0,
+    "fn": 3
+   },
+   {
+    "file": "bearing_v2",
+    "truth": 3,
+    "found": 2,
+    "tp": 1,
+    "fp": 1,
+    "fn": 2
+   },
+   {
+    "file": "bearing_v3",
+    "truth": 11,
+    "found": 8,
+    "tp": 8,
+    "fp": 0,
+    "fn": 3
+   },
+   {
+    "file": "gear_v1",
+    "truth": 8,
+    "found": 11,
+    "tp": 5,
+    "fp": 6,
+    "fn": 3
+   },
+   {
+    "file": "gear_v2",
+    "truth": 16,
+    "found": 21,
+    "tp": 15,
+    "fp": 6,
+    "fn": 1
+   },
+   {
+    "file": "gear_v3",
+    "truth": 22,
+    "found": 26,
+    "tp": 20,
+    "fp": 6,
+    "fn": 2
+   },
+   {
+    "file": "pcb_v1",
+    "truth": 16,
+    "found": 101,
+    "tp": 14,
+    "fp": 87,
+    "fn": 2
+   },
+   {
+    "file": "pcb_v2",
+    "truth": 11,
+    "found": 99,
+    "tp": 11,
+    "fp": 88,
+    "fn": 0
+   },
+   {
+    "file": "pcb_v3",
+    "truth": 27,
+    "found": 109,
+    "tp": 25,
+    "fp": 84,
+    "fn": 2
+   },
+   {
+    "file": "phone_teardown_v1",
+    "truth": 18,
+    "found": 19,
+    "tp": 15,
+    "fp": 4,
+    "fn": 3
+   },
+   {
+    "file": "phone_teardown_v2",
+    "truth": 9,
+    "found": 8,
+    "tp": 4,
+    "fp": 4,
+    "fn": 5
+   },
+   {
+    "file": "phone_teardown_v3",
+    "truth": 18,
+    "found": 21,
+    "tp": 17,
+    "fp": 4,
+    "fn": 1
+   },
+   {
+    "file": "pump_v1",
+    "truth": 19,
+    "found": 15,
+    "tp": 15,
+    "fp": 0,
+    "fn": 4
+   },
+   {
+    "file": "pump_v2",
+    "truth": 8,
+    "found": 6,
+    "tp": 6,
+    "fp": 0,
+    "fn": 2
+   },
+   {
+    "file": "pump_v3",
+    "truth": 27,
+    "found": 21,
+    "tp": 21,
+    "fp": 0,
+    "fn": 6
+   }
+  ]
+ }
+}

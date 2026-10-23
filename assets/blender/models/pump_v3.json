@@ -1,0 +1,175 @@
+{
+ "family": "pump",
+ "variant": 3,
+ "fault_types": [
+  "fracture",
+  "leak",
+  "pitting",
+  "tear"
+ ],
+ "n_fault_objects": 27,
+ "faults": [
+  {
+   "object": "Casing_Pit0",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit2",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit3",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit4",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit5",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit6",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit7",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit8",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit9",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit10",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit11",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit12",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit13",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit14",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit15",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Seal_TORN",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "Seal_Tear0",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Tear1",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Tear2",
+   "damage_type": "tear",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_Leak",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Seal_LeakDrop2",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "Impeller_Blade_BROKEN",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Impeller_BladeBreak",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": true
+  },
+  {
+   "object": "Impeller_BladeFragment",
+   "damage_type": "fracture",
+   "severity": 0.7,
+   "marker": true
+  }
+ ]
+}

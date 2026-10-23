@@ -1,0 +1,60 @@
+{
+ "family": "gear",
+ "variant": 1,
+ "fault_types": [
+  "debris",
+  "fracture",
+  "scoring"
+ ],
+ "n_fault_objects": 8,
+ "faults": [
+  {
+   "object": "OutputGear_BROKEN",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "OutputGear_Stump",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": true
+  },
+  {
+   "object": "Debris_0",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_1",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_2",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_3",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "OutputShaft_SCORED",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  },
+  {
+   "object": "OutputShaft_ScoredBand",
+   "damage_type": "scoring",
+   "severity": 0.6,
+   "marker": false
+  }
+ ]
+}

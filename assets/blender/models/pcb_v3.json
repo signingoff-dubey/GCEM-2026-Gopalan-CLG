@@ -1,0 +1,178 @@
+{
+ "family": "pcb",
+ "variant": 3,
+ "fault_types": [
+  "burn",
+  "crack",
+  "fracture",
+  "leak",
+  "lifted lead",
+  "open circuit",
+  "swelling"
+ ],
+ "n_fault_objects": 27,
+ "faults": [
+  {
+   "object": "U1_Pin_LIFTED",
+   "damage_type": "lifted lead",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "U1_SolderCrack",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Trace_Break",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": true
+  },
+  {
+   "object": "Trace_Whisker_0",
+   "damage_type": "open circuit",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Trace_Whisker_1",
+   "damage_type": "open circuit",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Trace_Whisker_2",
+   "damage_type": "open circuit",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "C3_BULGED",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Top",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Flap0",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Flap1",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Flap2",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Flap3",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_BULGED_Flap4",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "C3_Leak_Puddle",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "C3_Leak_Drop0",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "C3_Leak_Drop1",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "C3_Leak_Drop2",
+   "damage_type": "leak",
+   "severity": 0.6,
+   "marker": true
+  },
+  {
+   "object": "C3_Residue0",
+   "damage_type": "leak",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "C3_Residue1",
+   "damage_type": "leak",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "C3_Residue2",
+   "damage_type": "leak",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "R7_BURNT_Body",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "R7_BURNT_Blister0",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "R7_BURNT_Blister1",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "R7_BURNT_Blister2",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": true
+  },
+  {
+   "object": "R7_BURNT_Split",
+   "damage_type": "burn",
+   "severity": 0.7,
+   "marker": false
+  },
+  {
+   "object": "R7_Soot",
+   "damage_type": "burn",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "R7_Scorch",
+   "damage_type": "burn",
+   "severity": 0.65,
+   "marker": true
+  }
+ ]
+}

@@ -262,6 +262,7 @@ def explode(groups, offsets, target=(0, 0, 0), zoom=1.45, lift=0.0, t_in=54, hol
         sc.collection.objects.link(e)
         for ob in obs:
             ob.parent = e
+            ob["rootlens_order"] = idx + 1
         t0 = lead + idx * stag
         t1, t2 = t0 + t_in, t0 + t_in + hold
         t3 = t2 + t_in
@@ -284,3 +285,52 @@ def explode(groups, offsets, target=(0, 0, 0), zoom=1.45, lift=0.0, t_in=54, hol
             cam.keyframe_insert("location", frame=f)
     sc.frame_set(1)
     return last_open
+
+
+# ------------------------------------------------------------------ rootlens_* tags + ground truth
+import json as _json
+
+_DAMAGE = [  # (substring of lower-case name, damage type, severity)
+    ("missing", "missing part", 0.9), ("crack", "crack", 0.9), ("half", "fracture", 0.9),
+    ("stump", "fracture", 0.8), ("break", "fracture", 0.8), ("fragment", "fracture", 0.7),
+    ("broken", "fracture", 0.8), ("burnt", "burn", 0.7), ("blister", "burn", 0.7), ("scorch", "burn", 0.65),
+    ("soot", "burn", 0.5), ("charred", "burn", 0.7), ("leak", "leak", 0.6), ("residue", "leak", 0.5),
+    ("lifted", "lifted lead", 0.7), ("swollen", "swelling", 0.85), ("bulged", "swelling", 0.85),
+    ("battery", "swelling", 0.85), ("flap", "swelling", 0.7), ("tear", "tear", 0.6), ("torn", "tear", 0.6),
+    ("pit", "pitting", 0.5), ("scored", "scoring", 0.6), ("overheated", "overheating", 0.7),
+    ("debris", "debris", 0.4), ("whisker", "open circuit", 0.9), ("trace_break", "open circuit", 0.9),
+    ("deadline", "dead pixels", 0.6), ("outerrace", "spall", 0.8), ("pmic", "burn", 0.7),
+]
+_OVERLAY = ("Crack", "Pit", "Leak", "Soot", "Scorch", "Blister", "Residue", "Whisker", "DeadLine", "Debris",
+            "Seam", "Tear", "Trace_Break", "BladeBreak", "Stump", "Fragment", "Drop", "Puddle")
+_HOUSING = ("Board", "Housing_Base", "Cover_Plate", "Casing", "BackGlass", "Frame_", "Bracket", "OuterRace",
+            "Cover")
+
+
+def tag_rootlens(family, variant, json_path):
+    """Write rootlens_* custom properties (read by backend/assembly) and a ground-truth JSON."""
+    truth = []
+    for ob in bpy.context.scene.objects:
+        st = ob.get("status")
+        if ob.type != "MESH" and ob.type not in ("CURVE", "FONT") or st not in ("OK", "FAULT"):
+            continue
+        n = ob.name
+        ob["rootlens_part"] = n.replace("_", " ")
+        if st == "FAULT":
+            low = n.lower()
+            typ, sev = next(((t, v) for k, t, v in _DAMAGE if k in low), ("damage", 0.5))
+            overlay = any(k in n for k in _OVERLAY)
+            ob["rootlens_role"] = "damage_marker" if overlay else "internal"
+            ob["rootlens_damage_type"] = typ
+            ob["rootlens_severity"] = sev
+            ob["rootlens_internal"] = family in ("bearing", "gear", "pump") and "Crack" not in n
+            ob["rootlens_description"] = f"{typ} on {n.replace('_', ' ')}"
+            truth.append({"object": n, "damage_type": typ, "severity": sev, "marker": overlay})
+        else:
+            ob["rootlens_role"] = ("fastener" if n.startswith(("Bolt", "Key")) else
+                                   "housing" if n.startswith(_HOUSING) else "internal")
+    types = sorted({t["damage_type"] for t in truth})
+    with open(json_path, "w", encoding="utf-8") as f:
+        _json.dump({"family": family, "variant": variant, "fault_types": types, "n_fault_objects": len(truth),
+                    "faults": truth}, f, indent=1)
+    return truth

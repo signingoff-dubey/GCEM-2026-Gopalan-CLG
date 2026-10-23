@@ -1,0 +1,66 @@
+{
+ "family": "bearing",
+ "variant": 1,
+ "fault_types": [
+  "debris",
+  "fracture",
+  "spall"
+ ],
+ "n_fault_objects": 9,
+ "faults": [
+  {
+   "object": "OuterRace",
+   "damage_type": "spall",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Ball_3_halfA",
+   "damage_type": "fracture",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Ball_3_halfB",
+   "damage_type": "fracture",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Debris_0",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_1",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_2",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_3",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_4",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  },
+  {
+   "object": "Debris_5",
+   "damage_type": "debris",
+   "severity": 0.4,
+   "marker": true
+  }
+ ]
+}

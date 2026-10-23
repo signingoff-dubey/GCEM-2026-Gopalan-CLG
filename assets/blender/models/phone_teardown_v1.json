@@ -1,0 +1,119 @@
+{
+ "family": "phone_teardown",
+ "variant": 1,
+ "fault_types": [
+  "crack",
+  "swelling"
+ ],
+ "n_fault_objects": 18,
+ "faults": [
+  {
+   "object": "Battery_SWOLLEN",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "Battery_Label",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": false
+  },
+  {
+   "object": "Battery_Seam0",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": true
+  },
+  {
+   "object": "Battery_Seam1",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": true
+  },
+  {
+   "object": "Battery_Seam2",
+   "damage_type": "swelling",
+   "severity": 0.85,
+   "marker": true
+  },
+  {
+   "object": "Display_CRACKED",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": false
+  },
+  {
+   "object": "Display_Crack0",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack1",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack2",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack3",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack4",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack5",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack6",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack7",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_Crack8",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing6",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing13",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  },
+  {
+   "object": "Display_CrackRing22",
+   "damage_type": "crack",
+   "severity": 0.9,
+   "marker": true
+  }
+ ]
+}

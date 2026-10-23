@@ -1,0 +1,125 @@
+{
+ "family": "pump",
+ "variant": 1,
+ "fault_types": [
+  "fracture",
+  "pitting"
+ ],
+ "n_fault_objects": 19,
+ "faults": [
+  {
+   "object": "Casing_Pit0",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit1",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit2",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit3",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit4",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit5",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit6",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit7",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit8",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit9",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit10",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit11",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit12",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit13",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit14",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Casing_Pit15",
+   "damage_type": "pitting",
+   "severity": 0.5,
+   "marker": true
+  },
+  {
+   "object": "Impeller_Blade_BROKEN",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": false
+  },
+  {
+   "object": "Impeller_BladeBreak",
+   "damage_type": "fracture",
+   "severity": 0.8,
+   "marker": true
+  },
+  {
+   "object": "Impeller_BladeFragment",
+   "damage_type": "fracture",
+   "severity": 0.7,
+   "marker": true
+  }
+ ]
+}
