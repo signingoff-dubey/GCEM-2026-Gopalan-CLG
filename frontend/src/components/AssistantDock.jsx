@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ErrorBoundary from './ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, Bot, ChevronDown, Layers, LoaderCircle, Maximize2, X } from 'lucide-react';
 import { Chat } from '../pages/Analyst';
@@ -217,7 +218,9 @@ const AssistantDock = () => {
               <ContextPanel status={status} last={last} topic={topic} open={ctxOpen} onToggle={() => setCtxOpen((o) => !o)} />
               <TopicPicker topic={topic} onPick={pickTopic} />
               <div className="flex min-h-0 flex-1 flex-col rounded-2xl bg-white/90 p-3 text-ink">
-                <Chat key={topic.id} compact pending={pending} topic={topic} onAnswer={setLast} />
+                <ErrorBoundary what="The conversation">
+                  <Chat key={topic.id} compact pending={pending} topic={topic} onAnswer={setLast} />
+                </ErrorBoundary>
               </div>
             </div>
           </motion.aside>

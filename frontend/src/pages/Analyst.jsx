@@ -3,6 +3,7 @@ import { Bot, CircleCheck, CircleX, LoaderCircle, Microscope, SendHorizontal, Us
 import { Banner, CardTitle, ChipToggle } from '../components/ui';
 import { AiBadge, RichText, asText } from '../components/ai';
 import { api, post } from '../lib/api';
+import { VoiceInput } from '../components/VoiceInput';
 import { FIREBASE, firestore } from '../lib/firebase';
 import { useApi } from '../lib/useApi';
 
@@ -76,9 +77,14 @@ const Message = ({ m }) => {
               <details className="mt-2 text-xs text-ink/65">
                 <summary className="cursor-pointer font-medium">Retrieved context ({m.sources.length})</summary>
                 <ul className="mt-1 flex flex-col gap-1">
-                  {m.sources.map((s) => (
-                    <li key={s.id}><span className="font-semibold">[{s.id}] {s.source}:</span> {s.text.length > 220 ? `${s.text.slice(0, 220)}...` : s.text}</li>
-                  ))}
+                  {m.sources.map((s) => {
+                    // turns saved by the API (or asked on the phone) keep only the source ids, e.g. "S1"
+                    const src = typeof s === 'string' ? { id: s, source: '', text: '' } : s;
+                    const text = src.text ?? '';
+                    return (
+                      <li key={src.id}><span className="font-semibold">[{src.id}]{src.source ? ` ${src.source}:` : ''}</span> {text.length > 220 ? `${text.slice(0, 220)}...` : text}</li>
+                    );
+                  })}
                 </ul>
               </details>
             )}
@@ -225,12 +231,13 @@ export const Chat = ({ provider = 'auto', pending, compact = false, topic, onAns
           e.preventDefault();
           ask(input);
         }}
-        className="mt-4 flex gap-2"
+        className="relative mt-4 flex gap-2"
       >
         <label className="min-w-0 flex-1">
           <span className="sr-only">Your question</span>
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about the ranking, a safe window, a run or the Bosch line" className="field" maxLength={600} />
         </label>
+        <VoiceInput disabled={busy} onText={(t) => ask(t)} />
         <button type="submit" disabled={busy || !input.trim()} className="btn-primary shrink-0">
           {busy ? <LoaderCircle size={16} className="animate-spin" /> : <SendHorizontal size={16} />} Ask
         </button>
