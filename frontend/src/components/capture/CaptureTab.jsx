@@ -163,6 +163,7 @@ const Result = ({ cap, onRescore, rescoring, rescoreError }) => {
         <div className="mt-5 border-t border-ink/10 pt-4">
           <ScoreBody r={r} />
           {r.unknown_parameters?.length > 0 && <p className="mt-2 text-xs text-warn">Not used for the score because the model does not know them: {r.unknown_parameters.join(', ')}.</p>}
+          {r.suspect_sensors?.length > 0 && <p className="mt-2 text-xs text-warn">Check these sensors before trusting this run: {r.suspect_sensors.map((x) => `${x.sensor} (${x.reasons[0]})`).join('; ')}. The sensor health monitor flags them as bad; their readings were still used.</p>}
         </div>
       ) : (
         <p className="mt-4 text-sm text-ink/60">No score yet. Fix the values above or use manual entry.</p>

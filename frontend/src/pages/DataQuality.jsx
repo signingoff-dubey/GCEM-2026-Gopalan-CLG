@@ -1,4 +1,6 @@
-import { CheckCircle2, Database } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Database, Download } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 import { CardTitle } from '../components/ui';
 import Gate from '../components/ui/Gate';
 import { useApi } from '../lib/useApi';
@@ -48,6 +50,75 @@ const Drift = () => {
           </section>
         </>
       )}
+    </Gate>
+  );
+};
+
+
+// Sensor health: recent readings vs training. Flags sensors to check; nothing is dropped automatically.
+const TONE = { bad: 'bg-red-500/15 text-red-300', watch: 'bg-amber-500/15 text-amber-300', ok: 'bg-emerald-500/15 text-emerald-300', 'no signal': 'bg-ink/10 text-ink/60' };
+
+const Spark = ({ trace }) => {
+  const pts = trace.map((t, i) => [i, t.median_z]).filter(([, v]) => v != null);
+  if (pts.length < 2) return <span className="text-xs text-ink/40">-</span>;
+  const ys = pts.map(([, v]) => Math.max(-4, Math.min(4, v)));
+  const w = 72, h = 22, n = trace.length - 1;
+  const d = pts.map(([i], k) => `${k ? 'L' : 'M'}${((i / n) * w).toFixed(1)},${(h / 2 - (ys[k] / 4) * (h / 2 - 2)).toFixed(1)}`).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" className="overflow-visible">
+      <line x1="0" x2={w} y1={h / 2} y2={h / 2} className="stroke-ink/15" strokeDasharray="2 3" />
+      <path d={d} fill="none" className="stroke-accent" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+};
+
+const SensorHealth = () => {
+  const q = useApi('/api/sensors/health');
+  const [show, setShow] = useState('bad');
+  return (
+    <Gate q={q} what="Sensor health">
+      {(h) => {
+        const rows = h.sensors.filter((s) => show === 'all' ? s.status !== 'no signal' : s.status === show).slice(0, 60);
+        return (
+          <section className="card xl:col-span-2">
+            <CardTitle sub={`${h.compared}. ${h.rule}`}>Sensor health</CardTitle>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Stat k="Bad" v={num(h.counts.bad, 0)} sub="stuck, silent or mostly out of range" />
+              <Stat k="Watch" v={num(h.counts.watch, 0)} sub="drifted, spikes or more gaps" />
+              <Stat k="OK" v={num(h.counts.ok, 0)} sub="behaves as in training" />
+              <Stat k="No signal" v={num(h.counts['no signal'], 0)} sub="constant in training" />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {['bad', 'watch', 'all'].map((k) => (
+                <button key={k} type="button" onClick={() => setShow(k)} aria-pressed={show === k}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${show === k ? 'bg-ink text-panel' : 'bg-ink/10 text-ink/70 hover:bg-ink/15'}`}>{k}</button>
+              ))}
+              <span className="ml-auto flex gap-2">
+                <a className="btn-ghost text-xs" href={apiUrl('/api/export/sensors.csv')} download><Download size={14} /> Sensor dictionary (CSV)</a>
+                <a className="btn-ghost text-xs" href={apiUrl('/api/export/runs.csv')} download><Download size={14} /> Labelled runs (CSV)</a>
+              </span>
+            </div>
+            <div className="mt-3 max-h-[28rem] overflow-y-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-panel/95 text-xs text-ink/55"><tr><th className="py-1">Sensor</th><th>Status</th><th>Why</th><th className="text-right">Missing now</th><th className="text-right">Median over time</th></tr></thead>
+                <tbody>
+                  {rows.map((s) => (
+                    <tr key={s.sensor} className="border-t border-ink/8 align-top">
+                      <td className="py-1.5 font-mono">{s.sensor}</td>
+                      <td><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${TONE[s.status]}`}>{s.status}</span></td>
+                      <td className="pr-3 text-xs text-ink/70">{s.reasons.join('; ') || '-'}</td>
+                      <td className="tabular text-right">{pct(s.missing_recent, 0)}</td>
+                      <td className="text-right"><Spark trace={s.trace} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!rows.length && <p className="py-4 text-sm text-ink/55">None.</p>}
+            </div>
+            <p className="mt-2 text-xs text-ink/55">Sensor names, units and products are not published in SECOM, so they are not invented here. The CSVs add what RootLens knows about every column and every run.</p>
+          </section>
+        );
+      }}
     </Gate>
   );
 };
@@ -105,6 +176,7 @@ const DataQuality = () => {
           </section>
 
           <Drift />
+          <SensorHealth />
 
           <section className="card xl:col-span-2">
             <CardTitle sub="Sensors kept despite gaps: the fill value and the clip range are learned on the training window.">Most-missing sensors</CardTitle>
