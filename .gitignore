@@ -30,3 +30,13 @@ Thumbs.db
 dist/
 build/
 .claude/
+
+# Firebase: functions/ is assembled by scripts/build_functions.py at deploy time
+functions/backend/
+functions/config/
+functions/artifacts/
+functions/datasets/
+functions/seed/
+functions/venv/
+functions/.env
+.firebase/

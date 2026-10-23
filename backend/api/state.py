@@ -6,6 +6,7 @@ from functools import cached_property
 import numpy as np
 import pandas as pd
 
+from backend import cloud
 from backend.config import ARTIFACTS_DIR
 from backend.ml.counterfactual import NeighbourIndex
 from backend.ml.load import load_secom, time_split
@@ -21,6 +22,11 @@ class State:
         self.dir = artifacts_dir
 
     def json(self, name: str) -> dict:
+        if cloud.CLOUD:   # analysis results are rows in Firestore: artifacts/<name without .json>
+            d = cloud.doc_get("artifacts", name.removesuffix(".json"))
+            if not d:
+                raise ArtifactMissing(name)
+            return json.loads(d["json"])
         path = self.dir / name
         if not path.exists():
             raise ArtifactMissing(name)

@@ -1,0 +1,10 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "captures", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "inspections", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "assemblies", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "artifacts", "fieldPath": "json", "indexes": [] },
+    { "collectionGroup": "alerts", "fieldPath": "value", "indexes": [] }
+  ]
+}

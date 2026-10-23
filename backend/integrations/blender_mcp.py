@@ -12,6 +12,7 @@ import re
 import socket
 from pathlib import Path
 
+from backend import cloud
 from backend.config import DATA_DIR
 
 TIMEOUT_S = 4.0
@@ -76,6 +77,8 @@ def address() -> tuple[str, int]:
 
 
 def settings() -> dict:
+    if cloud.CLOUD:
+        return {"enabled": True, **(cloud.doc_get("settings", "blender") or {})}
     try:
         s = json.loads(SETTINGS.read_text()) if SETTINGS.exists() else {}
     except (OSError, ValueError):
@@ -84,6 +87,9 @@ def settings() -> dict:
 
 
 def set_enabled(on: bool) -> dict:
+    if cloud.CLOUD:
+        cloud.doc_set("settings", "blender", {"enabled": bool(on)}, merge=True)
+        return settings()
     try:
         allset = json.loads(SETTINGS.read_text()) if SETTINGS.exists() else {}
     except (OSError, ValueError):

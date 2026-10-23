@@ -1,0 +1,11 @@
+rules_version = '2';
+// Models, scan outputs, photos and samples are public to read so the browser loads them directly.
+// Only the API's service account (which bypasses these rules) writes.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{folder}/{allPaths=**} {
+      allow read: if folder in ['samples', 'inspections', 'assemblies', 'captures'];
+      allow write: if false;
+    }
+  }
+}

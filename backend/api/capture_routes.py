@@ -1,7 +1,9 @@
 """Capture endpoints: photo or webcam frame -> vision transcription -> range check -> score."""
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
+
+from backend import cloud
 from pydantic import BaseModel, Field
 
 from backend.api import service
@@ -25,12 +27,11 @@ def _score(record: dict, values: dict) -> dict:
 
 def _process(raw: bytes, source: str) -> dict:
     cid = store.new_id()
-    store.image_path(cid).parent.mkdir(parents=True, exist_ok=True)
-    store.image_path(cid).write_bytes(vision.prepare(raw))
+    image_url = store.put_image(cid, vision.prepare(raw))
     out = vision.extract(raw, run_sheet.fields())
     record = {"id": cid, "created": store.now(), "source": source,
               "provider": out["provider"], "model": out["model"], "chain_log": out["chain_log"],
-              "extracted": out["extracted"], "result": None, "image_url": f"/api/captures/{cid}/image",
+              "extracted": out["extracted"], "result": None, "image_url": image_url,
               "label": LABEL}
     if out["extracted"] and out["extracted"]["values"]:
         _score(record, out["extracted"]["values"])
@@ -96,6 +97,8 @@ def get_capture(cid: str):
 
 @router.get("/captures/{cid}/image")
 def capture_image(cid: str):
+    if cloud.CLOUD:
+        return RedirectResponse(cloud.blob_url(f"captures/{cid}.jpg"))
     p = store.image_path(cid)
     if not cid.startswith("c_") or not p.exists():
         raise HTTPException(404, "image not found")
