@@ -5,7 +5,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+
+from backend import cloud
 from pydantic import BaseModel
 
 from backend.assembly import service
@@ -88,6 +90,8 @@ def get_one(aid: str):
 
 @router.get("/{aid}/model.glb")
 def model(aid: str):
+    if cloud.CLOUD:
+        return RedirectResponse(cloud.blob_url(f"assemblies/{aid}/model.glb"))
     p = service.model_file(aid)
     if p is None:
         raise HTTPException(404, "model not found")
@@ -96,6 +100,8 @@ def model(aid: str):
 
 @router.get("/{aid}/files/{rel:path}")
 def model_files(aid: str, rel: str):
+    if cloud.CLOUD:
+        return RedirectResponse(cloud.blob_url(f"assemblies/{aid}/files/{rel}"))
     p = service.model_file(aid, rel)
     if p is None:
         raise HTTPException(404, "file not found")

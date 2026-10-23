@@ -2,7 +2,7 @@
 and a "view damage" plan the viewer can follow."""
 import numpy as np
 
-from backend.assembly import SIMULATED_NOTE, infer
+from backend.assembly import SIMULATED_NOTE, ai_label, infer, remedies
 from backend.assembly.gltf import mesh_bounds, read_accessor, world_bounds, world_matrices
 
 PREFIX = "rootlens_"
@@ -59,7 +59,21 @@ def _animations(doc: dict, binary: bytes) -> list[dict]:
     return out
 
 
-def summarize(doc: dict, binary: bytes = b"") -> dict:
+def _materials(doc: dict) -> dict:
+    """Node name -> material name of its first primitive (evidence for the AI labeller)."""
+    mats = doc.get("materials", [])
+    out = {}
+    for n in doc.get("nodes", []):
+        if "mesh" in n:
+            prims = doc["meshes"][n["mesh"]].get("primitives", [])
+            mi = prims[0].get("material") if prims else None
+            if mi is not None and mi < len(mats):
+                out[n.get("name", "")] = mats[mi].get("name")
+    return out
+
+
+def summarize(doc: dict, binary: bytes = b"", ai_label_for: str | None = None) -> dict:
+    """ai_label_for: the file's label; when given and the file has no rootlens_* tags, the AI labeller runs too."""
     nodes = doc.get("nodes", [])
     meshes = doc.get("meshes", [])
     mats = world_matrices(doc)
@@ -96,8 +110,18 @@ def summarize(doc: dict, binary: bytes = b"") -> dict:
             "thermal_attribute": _thermal_attr(mesh),
             "_has_props": bool(p),
         })
+    labels = None
     if infer.applies(parts):
         warnings += infer.infer(parts)
+        warnings += ai_label.geometry_findings(parts)
+        generic = sum(p["name"].startswith(("Mesh", "mesh", "Object", "Cube", "part_", "node")) for p in parts)
+        if ai_label_for and (not any(p.get("damage") for p in parts) or generic > len(parts) / 2):
+            # names and geometry found nothing, or the names say nothing: ask the AI to label the parts
+            notes, labels = ai_label.ai_labels(parts, _materials(doc), ai_label_for)
+            warnings += notes
+    for part in parts:
+        if part.get("damage"):
+            part["damage"]["remedy"] = remedies.lookup(part["damage"].get("type"), part.get("display_name", ""))
     for part in parts:
         part.pop("_has_props", None)
 
@@ -150,6 +174,7 @@ def summarize(doc: dict, binary: bytes = b"") -> dict:
                       "switch to thermal view", "show damage card"],
         },
         "warnings": warnings,
+        "ai_labels": labels,
         "note": SIMULATED_NOTE,
     }
 

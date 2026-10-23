@@ -115,7 +115,7 @@ def infer(parts: list[dict]) -> list[str]:
         kind = kind.format(head=head)
         dmg = {"type": kind, "severity": sev, "internal": internal,
                "description": desc.format(host=host_name, head=head, Head=head.capitalize()),
-               "inferred": True}
+               "inferred": True, "source": "object name"}
         p["display_name"] = nice_name(p["name"])
         p["damage"] = dmg
         if marker:

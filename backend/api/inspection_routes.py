@@ -4,7 +4,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+
+from backend import cloud
 from pydantic import BaseModel, Field
 
 from backend.inspection import service
@@ -84,6 +86,8 @@ def get_one(iid: str):
 
 @router.get("/{iid}/model.glb")
 def model(iid: str):
+    if cloud.CLOUD:
+        return RedirectResponse(cloud.blob_url(f"inspections/{iid}/model.glb"))
     p = service.model_path(iid)
     if p is None:
         raise HTTPException(404, "model not found")
@@ -93,6 +97,8 @@ def model(iid: str):
 @router.get("/{iid}/parts.glb")
 def parts_model(iid: str):
     """The original multi-part model, so the viewer can play its animation and explode it."""
+    if cloud.CLOUD:
+        return RedirectResponse(cloud.blob_url(f"inspections/{iid}/parts.glb"))
     p = service.model_path(iid, "parts.glb")
     if p is None:
         raise HTTPException(404, "model not found")

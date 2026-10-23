@@ -134,3 +134,12 @@ def test_damage_inferred_from_object_names():
 def test_own_tags_skip_inference():
     s = summarize(*read_glb(demo.build()))
     assert not any("inferred" in w for w in s["warnings"])
+
+
+def test_loading_the_same_model_twice_keeps_one_copy(client, tmp_path):
+    p = tmp_path / "models" / "pb.glb"
+    p.write_bytes(demo.build())
+    a = client.post("/api/assembly/samples/load", json={"name": "models/pb.glb"}).json()
+    b = client.post("/api/assembly/samples/load", json={"name": "models/pb.glb"}).json()
+    assert a["id"] == b["id"] and len(client.get("/api/assembly").json()["assemblies"]) == 1
+    assert service.dedupe() == {"removed": []}
