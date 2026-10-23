@@ -1,4 +1,24 @@
 import { useEffect, useState } from 'react';
+
+// Opening or closing the panel changes the main column's width, so its text re-wraps and the page would slide
+// under the reader. Pin whatever is at the top of the view to the same spot until the width animation ends.
+const keepReadingPosition = (ms = 420) => {
+  const main = document.querySelector('main');
+  if (!main) return;
+  const box = main.getBoundingClientRect();
+  const probe = document.elementFromPoint(box.left + box.width / 2, box.top + 96);
+  const anchor = probe && main.contains(probe) ? probe : null;
+  if (!anchor) return;
+  const top = anchor.getBoundingClientRect().top;
+  const end = performance.now() + ms;
+  const step = () => {
+    if (!anchor.isConnected) return;
+    const drift = anchor.getBoundingClientRect().top - top;
+    if (Math.abs(drift) > 0.5) main.scrollTop += drift;
+    if (performance.now() < end) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+};
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box, Camera, PanelRightClose, PanelRightOpen, ScanSearch, X } from 'lucide-react';
 import { Calendar, DateRail, useLiveDayModel } from './CalendarParts';
@@ -186,7 +206,10 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
       >
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => {
+            keepReadingPosition();
+            setExpanded((v) => !v);
+          }}
           aria-label={expanded ? 'Collapse the calendar panel' : 'Expand the calendar panel'}
           aria-expanded={expanded}
           title={expanded ? 'Collapse' : 'Expand'}
@@ -226,6 +249,7 @@ const RightPanel = ({ drawerOpen = false, onCloseDrawer }) => {
                   picked={picked}
                   onPick={(d) => {
                     setPicked(d);
+                    keepReadingPosition();
                     setExpanded(true);
                   }}
                 />

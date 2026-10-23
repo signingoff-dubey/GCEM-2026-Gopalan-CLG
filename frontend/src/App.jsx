@@ -27,6 +27,7 @@ import { StatusCard } from './components/ui/Gate';
 const Inspection = lazy(() => import('./pages/Inspection'));
 import { findPage, pages, sectionOf } from './navigation';
 import { useRoute, navigate } from './lib/router';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const SCREENS = {
   home: Overview,
@@ -52,6 +53,10 @@ const readExpanded = () => {
     return false;
   }
 };
+
+// Pages that follow their URL parameter in place (#/windows/F33 -> #/windows/F59 only changes the selection),
+// instead of being rebuilt and refetched for every parameter.
+const FOLLOWS_PARAM = new Set(['windows']);
 
 const App = () => {
   const { slug, param } = useRoute();
@@ -96,7 +101,7 @@ const App = () => {
           <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
             <Navbar page={page} onOpenMenu={() => setMobileOpen(true)} onOpenSummary={() => setSummaryOpen(true)} />
             <motion.div
-              key={`${page.slug}/${param ?? ''}`}
+              key={FOLLOWS_PARAM.has(page.slug) ? page.slug : `${page.slug}/${param ?? ''}`}
               className="mt-6"
               initial={{ opacity: 0, y: 14, scale: 0.985, filter: 'blur(10px)' }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
@@ -108,7 +113,9 @@ const App = () => {
                 </div>
               )}
               <Suspense fallback={<StatusCard q={{ loading: true }} what="This page" />}>
-                <Screen key={param} id={param} />
+                <ErrorBoundary key={page.slug} what={page.label}>
+                  <Screen key={FOLLOWS_PARAM.has(page.slug) ? page.slug : param} id={param} />
+                </ErrorBoundary>
               </Suspense>
             </motion.div>
           </main>
@@ -116,7 +123,9 @@ const App = () => {
         </div>
 
         <RightPanel drawerOpen={summaryOpen} onCloseDrawer={closeSummary} />
-        <AssistantDock />
+        <ErrorBoundary what="The assistant">
+          <AssistantDock />
+        </ErrorBoundary>
       </div>
     </MotionConfig>
   );

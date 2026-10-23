@@ -126,13 +126,9 @@ const WhatIf = ({ w }) => {
 
 const Body = ({ sw, id }) => {
   const windows = sw.windows.filter((x) => x.fit).map(adapt);
-  const start = windows.find((w) => w.feature === id) ?? windows[0];
-  const [picked, setPicked] = useState(start.feature);
-  const w = windows.find((x) => x.feature === picked) ?? start;
-  const pick = (f) => {
-    setPicked(f);
-    navigate('windows', f);
-  };
+  // the URL is the selection: switching parameter (tab, card or back button) never rebuilds the page
+  const w = windows.find((x) => x.feature === id) ?? windows[0];
+  const pick = (f) => navigate('windows', f);
   return (
     <div className="flex flex-col gap-[var(--gap)]">
       <Banner tone="warn">
