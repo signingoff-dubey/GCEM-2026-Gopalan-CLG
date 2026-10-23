@@ -14,6 +14,8 @@ from collections import defaultdict
 
 import numpy as np
 
+from backend.assembly import infer
+
 from backend.assembly.infer import nice_name
 
 MAX_PARTS_FOR_AI = 160
@@ -72,7 +74,7 @@ def geometry_findings(parts: list[dict]) -> list[str]:
                 continue
             for i in c:
                 p = members[i]
-                if p.get("damage"):
+                if p.get("damage") or infer.healthy(p["name"]):
                     continue
                 s = sizes[i]
                 k = int(np.argmin([np.abs(np.log(np.maximum(s, 1e-12) / np.maximum(m, 1e-12))).sum() for m in centres]))
@@ -95,13 +97,19 @@ def geometry_findings(parts: list[dict]) -> list[str]:
     if boxes:
         body = max(boxes, key=lambda t: float(np.prod(np.maximum(t[2] - t[1], 1e-9))))
         bsize = body[2] - body[1]
+        scale = float(np.max(bsize))
+        others = [(lo, hi) for _, lo, hi in boxes]
         for p, lo, hi in boxes:
-            if p is body[0] or p.get("damage"):
+            if p is body[0] or p.get("damage") or infer.healthy(p["name"]):
                 continue
             c = (lo + hi) / 2
-            small = float(np.max(hi - lo)) < 0.08 * float(np.max(bsize))
-            outside = np.any(c < body[1] - 0.15 * bsize) or np.any(c > body[2] + 0.15 * bsize)
-            if small and outside:
+            small = float(np.max(hi - lo)) < 0.08 * scale
+            # outside the body by a margin of its overall size (per-axis margins call everything on a thin board "outside")
+            outside = np.any(c < body[1] - 0.15 * scale) or np.any(c > body[2] + 0.15 * scale)
+            # touching or nearly touching another part = mounted, not loose
+            gap = min((float(np.linalg.norm(np.maximum(0, np.maximum(lo - ohi, olo - hi)))) for olo, ohi in others
+                       if not (olo is lo and ohi is hi)), default=float("inf"))
+            if small and outside and gap > 0.02 * scale:
                 p["damage"] = {"type": "loose fragment", "severity": 0.5, "internal": False,
                                "description": "Small piece lying away from the assembly (geometry check)", "source": "geometry"}
                 p["display_name"] = nice_name(p["name"])

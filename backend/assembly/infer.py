@@ -29,7 +29,30 @@ RULES = [
     ("dust", ("contamination", 0.3, True, "Loose particle on {host}")),
     ("void", ("void", 0.6, True, "Void in {host}")),
     ("delam", ("delamination", 0.7, True, "Delamination on {host}")),
+    ("bulg", ("bulged {head}", 0.75, False, "{Head} bulged (swollen)")),
+    ("swell", ("bulged {head}", 0.75, False, "{Head} swollen")),
+    ("leak", ("leak", 0.6, True, "Leak at {host}")),
+    ("puddle", ("leak", 0.6, True, "Leaked fluid near {host}")),
+    ("overheat", ("overheated {head}", 0.7, False, "{Head} overheated")),
+    ("corro", ("corrosion", 0.5, True, "Corrosion on {host}")),
+    ("rust", ("corrosion", 0.5, True, "Rust on {host}")),
+    ("broken", ("broken {head}", 0.8, False, "Broken {head}")),
+    ("break", ("broken {head}", 0.8, False, "Broken {head}")),
+    ("fragment", ("broken {head}", 0.6, False, "Fragment of a broken {head}")),
+    ("pit", ("pitting", 0.5, True, "Pitting on {host}")),
+    ("dent", ("dent", 0.5, True, "Dent in {host}")),
+    ("bent", ("bent {head}", 0.6, False, "Bent {head}")),
+    ("worn", ("worn {head}", 0.5, False, "Worn {head}")),
+    ("stump", ("broken {head}", 0.8, False, "Broken {head}, stump left in place")),
+    ("scor", ("scoring", 0.55, True, "Scoring on {host}")),
+    ("residue", ("contamination", 0.4, True, "Residue on {host}")),
+    ("swoll", ("bulged {head}", 0.75, False, "{Head} swollen")),
+    ("blister", ("blister", 0.6, True, "Blister on {host}")),
+    ("missing", ("missing {head}", 0.8, True, "Missing {head}")),
 ]
+# short words must start a word in the name (Casing_Pit15 yes, Pitch no; Dent yes, Student no)
+WORD_START = {"pit", "dent", "bent", "worn", "rust", "tear", "lift", "void", "dust", "break", "scor"}
+HEALTHY = ("ok", "good", "intact", "healthy", "ref", "reference")
 NICE = {"die": "silicon die", "body": "package body", "attach": "die attach", "paddle": "die paddle",
         "ball": "bond ball", "pad": "bond pad", "inner": "inner lead", "lead": "lead", "wire": "bond wire",
         "plate": "lead plating", "stitch": "stitch bond", "marking": "marking"}
@@ -37,10 +60,26 @@ NOT_HOST = ("marking", "label", "text")     # printed decals sit on top of the r
 T_BASE, T_PEAK = 34.0, 46.0
 
 
+def _tokens(name: str) -> list[str]:
+    """Words in an object name: split on _ - . spaces, digits and camelCase (SolderCrack -> solder, crack)."""
+    return [t.lower() for t in re.findall(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+", name)]
+
+
+def healthy(name: str) -> bool:
+    """Named as a good part (C1_OK_Top, Gear_Reference): never flagged."""
+    return any(t in HEALTHY for t in _tokens(name))
+
+
 def _rule(name: str):
+    if healthy(name):
+        return None
     low = name.lower().replace("_", "")
+    toks = _tokens(name)
     for word, rule in RULES:
-        if word in low:
+        if word in WORD_START:
+            if any(t.startswith(word) for t in toks):
+                return rule
+        elif word in low:
             return rule
     return None
 
@@ -104,7 +143,7 @@ def infer(parts: list[dict]) -> list[str]:
             def area(q):
                 s_ = np.sort(boxes[q["name"]][1] - boxes[q["name"]][0])
                 return float(s_[1] * s_[2])
-            hosts = [q for q in parts if q["name"] != p["name"] and not _rule(q["name"]) and boxes[q["name"]] is not None
+            hosts = [q for q in parts if q["name"] != p["name"] and not _rule(q["name"]) and not healthy(q["name"]) and boxes[q["name"]] is not None
                      and not q["name"].lower().startswith(NOT_HOST) and _cover(b, boxes[q["name"]]) >= 0.5
                      and area(q) >= 0.5 * float(np.prod(np.sort(b[1] - b[0])[1:]))]
             host = min(hosts, key=area) if hosts else None
