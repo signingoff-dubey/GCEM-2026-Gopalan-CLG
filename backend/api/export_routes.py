@@ -1,5 +1,8 @@
 """Sensor health and labelled exports of the SECOM data.
 
+Numeric cells are left empty where a value does not exist (rank of an unranked sensor, window of a sensor without
+one); the text columns next to them say why.
+
 SECOM is published anonymised: 590 numbered columns, a pass/fail label and a time stamp, no sensor names,
 units or product. These exports add everything RootLens knows about each column (position, what cleaning did,
 correlation group, ranking, safe window, health) and everything about each run (split, outcome, model risk,
@@ -54,6 +57,11 @@ def _sensor_table() -> list[dict]:
     for pos, c in enumerate(X.columns):
         col = tr[c].dropna()
         r, w, h = ranked.get(c, {}), windows.get(c, {}), hmap.get(c, {})
+        kept = c not in dropped
+        # say why a cell is empty instead of leaving it blank: only the top 50 are ranked, only the top 10 get a window
+        no_rank = "" if r else ("not ranked: dropped before training" if not kept else f"not ranked: outside the top {len(ranked)}")
+        no_window = "" if w else ("no window: dropped before training" if not kept
+                                  else "no window: only the top 10 ranked sensors get one")
         q = col.quantile([0.01, 0.99]) if len(col) else None
         rows.append({
             "sensor": c,
@@ -71,10 +79,10 @@ def _sensor_table() -> list[dict]:
             "mean_rank": _r(r.get("mean_rank")),
             "rank_sd": _r(r.get("rank_std")),
             "top10_share": _r(r.get("top_k_freq")),
-            "stable_driver": "yes" if r.get("stable") else ("no" if r else ""),
+            "stable_driver": "yes" if r.get("stable") else ("no" if r else no_rank),
             "safe_window_low": _r((w.get("window") or [None, None])[0]),
             "safe_window_high": _r((w.get("window") or [None, None])[1]),
-            "window_status": w.get("status", ""),
+            "window_status": w.get("status") or no_window,
             "health": h.get("status", ""),
             "health_reasons": "; ".join(h.get("reasons", [])),
         })
