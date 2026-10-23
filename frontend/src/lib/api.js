@@ -1,9 +1,9 @@
-// The only place the frontend talks to the backend (docs/COMPANION_APP.md "API").
+// The only place the frontend talks to the backend (the FastAPI backend, see its /docs page).
 // The base URL comes from Settings > Data, then VITE_API_URL, then the local FastAPI default.
-// Backend not built yet: health() fails and the UI shows Offline. Swap sample imports for these calls page by page.
+// A 503 means the backend has not generated that artifact yet; ApiError carries the status so screens can say so.
 const KEY = 'rootlens-api';
 
-export const API_DEFAULTS = { url: import.meta.env?.VITE_API_URL || 'http://127.0.0.1:8000', pollMs: 2000 };
+export const API_DEFAULTS = { url: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000', pollMs: 2000 };
 
 export const readApiSettings = () => {
   try {
@@ -23,12 +23,28 @@ export const saveApiSettings = (patch) => {
   return next;
 };
 
+export class ApiError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export const api = async (path, init = {}) => {
-  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers }, signal: init.signal ?? AbortSignal.timeout(4000) });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} on ${path}`);
+  const res = await fetch(`${readApiSettings().url}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers }, signal: init.signal ?? AbortSignal.timeout(15000) });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = typeof body.detail === 'string' ? body.detail : '';
+    } catch {
+      // No JSON body: the status line is all there is.
+    }
+    throw new ApiError(res.status, detail || `${res.status} ${res.statusText} on ${path}`);
+  }
   return res.json();
 };
 
+export const post = (path, body, init = {}) => api(path, { ...init, method: 'POST', body: JSON.stringify(body) });
+
 export const health = () => api('/api/health');
-export const latestCapture = () => api('/api/captures/latest');
-export const getCapture = (id) => api(`/api/captures/${encodeURIComponent(id)}`);
