@@ -88,3 +88,12 @@ def model(iid: str):
     if p is None:
         raise HTTPException(404, "model not found")
     return FileResponse(p, media_type="model/gltf-binary")
+
+
+@router.get("/{iid}/parts.glb")
+def parts_model(iid: str):
+    """The original multi-part model, so the viewer can play its animation and explode it."""
+    p = service.model_path(iid, "parts.glb")
+    if p is None:
+        raise HTTPException(404, "model not found")
+    return FileResponse(p, media_type="model/gltf-binary")
