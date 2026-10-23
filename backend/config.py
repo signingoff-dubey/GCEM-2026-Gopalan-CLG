@@ -10,6 +10,10 @@ ARTIFACTS_DIR = ROOT / "artifacts"
 CAPTURES_DIR = DATA_DIR / "captures"
 SCANS_DIR = DATA_DIR / "scans"
 INSPECTION_DIR = DATA_DIR / "inspection"
+ASSEMBLY_DIR = DATA_DIR / "assemblies"
+ALERTS_DIR = DATA_DIR / "alerts"
+# sample models: committed assets (datasets/models, assets/blender from the Blender team) and local drop-ins (data/models)
+MODELS_DIRS = [ROOT / "datasets" / "models", ROOT / "assets" / "blender", DATA_DIR / "models"]
 
 SEED = 42
 
