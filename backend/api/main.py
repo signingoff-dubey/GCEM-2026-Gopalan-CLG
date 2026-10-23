@@ -160,6 +160,18 @@ def delete_items(ids: list[str], x_admin_token: str | None = Header(None)):
     return {"deleted": done}
 
 
+@app.get("/api/app/config")
+def app_config():
+    """What the mobile app needs at start: API version, push topic and the features this backend offers."""
+    from backend.alerts.channels import PUSH_TOPIC, configured
+    return {"api_version": app.version, "min_android_version_code": 1, "push_topic": PUSH_TOPIC,
+            "firebase_project": os.getenv("GCLOUD_PROJECT", "rootlens-hb"),
+            "live_collections": ["assemblies", "inspections", "captures"],
+            "channels": configured(),
+            "uploads": {"model": [".glb", ".zip", ".obj", ".ply", ".stl"], "scan": [".obj", ".ply", ".glb", ".stl"],
+                        "photo": ["image/jpeg", "image/png", "image/webp"], "max_mb": 300}}
+
+
 @app.get("/api/history/calendar")
 def history_calendar():
     """Runs and failures per day of the replay window (SECOM 2008 runs replayed onto Sep-Oct 2026)."""

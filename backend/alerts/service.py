@@ -23,7 +23,7 @@ from backend.inspection import service as inspection
 POLL_S = 3.0
 QUIET_S = 8.0          # no running jobs and no new findings for this long = batch is done
 LOG_KEEP = 300
-CHANNELS = ("call", "whatsapp", "email")
+CHANNELS = ("call", "whatsapp", "email", "push")
 TRIGGERS = {
     "scan_crack": "Crack found by a surface scan inspection",
     "scan_dent": "Dent or deformation beyond tolerance in a scan inspection",
@@ -233,7 +233,7 @@ def dispatch(alert: dict, s: dict | None = None, only: str | None = None, manual
                  "trigger": alert["trigger"], "subject": alert["subject"], "link": alert.get("link"),
                  "ok": False, "result": ""}
         try:
-            if not ready[ch]:
+            if not ready.get(ch):
                 raise channels.ChannelError("not configured: add the credentials to .env")
             if ch == "call":
                 blocked = _calls_allowed(s, manual)
@@ -248,6 +248,8 @@ def dispatch(alert: dict, s: dict | None = None, only: str | None = None, manual
                     raise channels.ChannelError("no WhatsApp number set")
                 done = [channels.send_whatsapp(n, f"*{alert['subject']}*\n{alert['text']}") for n in numbers]
                 entry["result"] = "; ".join(done)
+            elif ch == "push":
+                entry["result"] = channels.send_push(alert["subject"], alert["text"], alert.get("link"), alert.get("trigger", "alert"))
             else:
                 entry["result"] = channels.send_email(s["recipients"]["email"], alert["subject"], alert["text"])
             entry["ok"] = True

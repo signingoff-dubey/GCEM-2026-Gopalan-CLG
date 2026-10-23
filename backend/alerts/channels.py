@@ -48,8 +48,13 @@ def call_provider() -> str | None:
     return None
 
 
+PUSH_TOPIC = "rootlens-alerts"   # the Android app subscribes to this topic
+
+
 def configured() -> dict:
-    return {"call": call_provider(),
+    from backend import cloud
+    return {"push": "fcm" if cloud.CLOUD or os.getenv("ROOTLENS_FCM") == "1" else None,
+            "call": call_provider(),
             "whatsapp": "twilio" if _env(*TWILIO_KEYS, "TWILIO_WHATSAPP_FROM") else None,
             "email": "smtp" if _env(*SMTP_KEYS) else None}
 
@@ -109,6 +114,24 @@ def send_call(to: str, message: str, variables: dict | None = None) -> str:
         _twilio("Calls.json", {"To": f"+{number}", "From": os.environ["TWILIO_CALL_FROM"], "Twiml": twiml})
         return f"calling +{number} (Twilio)"
     raise ChannelError("call channel not configured")
+
+
+def send_push(subject: str, text: str, link: str | None = None, kind: str = "alert") -> str:
+    """Firebase Cloud Messaging to every phone running the app (topic rootlens-alerts), even when it is closed."""
+    from firebase_admin import messaging
+
+    from backend import cloud
+    cloud._app()
+    msg = messaging.Message(
+        topic=PUSH_TOPIC,
+        notification=messaging.Notification(title=subject[:120], body=text[:400]),
+        data={"kind": kind, "link": link or "", "subject": subject[:200]},
+        android=messaging.AndroidConfig(priority="high", notification=messaging.AndroidNotification(channel_id="rootlens_alerts")),
+    )
+    try:
+        return f"pushed to the app ({messaging.send(msg)[-12:]})"
+    except Exception as e:  # noqa: BLE001 - FCM errors come in many types
+        raise ChannelError(f"push: {e}") from e
 
 
 def send_whatsapp(to: str, message: str) -> str:

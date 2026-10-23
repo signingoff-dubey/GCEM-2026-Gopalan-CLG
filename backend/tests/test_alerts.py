@@ -35,12 +35,12 @@ def test_first_run_marks_existing_then_alerts_new_crack(env):
     assert service.check_once() == []          # existing items never alert
     scans.append(SCAN)
     out = service.check_once()
-    assert {e["channel"] for e in out} == {"call", "whatsapp", "email"}
+    assert {e["channel"] for e in out} == {"call", "whatsapp", "email", "push"}
     assert [e["ok"] for e in out if e["channel"] == "email"] == [False]     # not configured: nothing sent
     assert sent[0][2] == "Hi boss, this is RootLens. A fault was found in bracket.ply (artificial defect)."
     assert "2 crack regions" in sent[0][3]["fault_details"]
     assert service.check_once() == []          # alerts once per item
-    assert len(service.log()) == 3
+    assert len(service.log()) == 4
 
 
 def test_batch_waits_until_jobs_finish(env):
@@ -165,3 +165,11 @@ def test_call_status_follows_the_sarvam_webhook(env, monkeypatch):
     row = c.get("/api/alerts/calls/att_1").json()
     assert row["status"] == "connected" and row["duration_s"] == 72 and row["transcript"][1]["text"] == "Hold the batch"
     assert service.status()["calls"][0]["label"] == "Picked up, call ended"
+
+
+def test_push_channel_sends_to_the_app_topic(env, monkeypatch):
+    pushed = []
+    monkeypatch.setattr(channels, "configured", lambda: {"call": None, "whatsapp": None, "email": None, "push": "fcm"})
+    monkeypatch.setattr(channels, "send_push", lambda subject, text, link=None, kind="alert": pushed.append((subject, link)) or "pushed")
+    out = service.test_alert("push")
+    assert out[0]["ok"] and pushed[0][0] == "RootLens: test alert"
