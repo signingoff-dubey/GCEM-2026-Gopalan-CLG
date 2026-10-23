@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import Backdrop from './components/Backdrop.jsx';
+import Opening from './components/Opening.jsx';
 import { MotionConfig, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -75,6 +76,7 @@ const App = () => {
   return (
     <MotionConfig reducedMotion="user">
       <Backdrop />
+      <Opening />
       <div className="flex min-h-dvh gap-4 p-3 sm:p-4 lg:h-dvh">
         <Sidebar
           active={page.slug}
