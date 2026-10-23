@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, CircleCheck, CircleX, LoaderCircle, Microscope, SendHorizontal, User, Wrench } from 'lucide-react';
 import { Banner, CardTitle, ChipToggle } from '../components/ui';
 import { AiBadge, RichText, asText } from '../components/ai';
-import { post } from '../lib/api';
+import { api, post } from '../lib/api';
+import { FIREBASE, firestore } from '../lib/firebase';
 import { useApi } from '../lib/useApi';
 
 const PROVIDERS = [
@@ -106,6 +107,31 @@ export const Chat = ({ provider = 'auto', pending, compact = false, topic, onAns
       // storage full or blocked: the conversation still works for this visit
     }
   }, [messages, memoryKey]);
+
+  // The conversation is shared with the Android app: the API saves every turn, and both clients listen to
+  // Firestore chats/{topic}/messages. Server turns win; a local answer keeps its extra detail (trace, badge).
+  const topicId = topic && topic.kind !== 'line' ? topic.id : 'line';
+  useEffect(() => {
+    const merge = (server) => setMessages((cur) => {
+      const local = new Map(cur.filter((m) => !m.error).map((m) => [`${m.role}|${m.content}`, m]));
+      const errors = cur.filter((m) => m.error);
+      return [...server.map((m) => ({ ...m, ...(local.get(`${m.role}|${m.content}`) ?? {}) })), ...errors];
+    });
+    let closed = false;
+    let unsub = () => {};
+    api(`/api/ai/chat?topic=${encodeURIComponent(topicId)}`).then((r) => !closed && r.messages?.length && merge(r.messages)).catch(() => {});
+    if (FIREBASE) {
+      firestore().then(({ db, fs }) => {
+        if (closed) return;
+        const q = fs.query(fs.collection(db, 'chats', topicId, 'messages'), fs.orderBy('at', 'asc'), fs.limitToLast(60));
+        unsub = fs.onSnapshot(q, (snap) => snap.size && merge(snap.docs.map((d) => d.data())));
+      });
+    }
+    return () => {
+      closed = true;
+      unsub();
+    };
+  }, [topicId]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const end = useRef(null);
@@ -209,7 +235,7 @@ export const Chat = ({ provider = 'auto', pending, compact = false, topic, onAns
           {busy ? <LoaderCircle size={16} className="animate-spin" /> : <SendHorizontal size={16} />} Ask
         </button>
         {messages.length > 0 && (
-          <button type="button" onClick={() => setMessages([])} disabled={busy} className="btn-ghost shrink-0">Clear</button>
+          <button type="button" onClick={() => { setMessages([]); api(`/api/ai/chat?topic=${encodeURIComponent(topicId)}`, { method: 'DELETE' }).catch(() => {}); }} disabled={busy} className="btn-ghost shrink-0" title="Clears this conversation on the dashboard and the phone">Clear</button>
         )}
       </form>
     </section>
