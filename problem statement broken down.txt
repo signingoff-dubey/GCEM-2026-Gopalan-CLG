@@ -1,0 +1,26 @@
+A problem statement that only repeats the PS text scores nothing, because the judges wrote it. [Likely] Yours should name the pain, the gap in existing tools, and your scope limits. Here is a submission-ready version.
+
+---
+
+## Problem Statement
+
+**The problem.** Manufacturers can see that scrap is rising but not why. A single part passes through dozens of stations and collects hundreds of sensor readings, and a quality engineer has no practical way to tell which station or parameter is driving the defects. The data makes this hard in three ways:
+
+- **Missing:** Most readings are blank for most parts, because parts skip stations and sensors drop out.
+- **Imbalanced:** Defects are rare, roughly 0.6% of parts in the Bosch dataset and about 6% in SECOM. [Certain] A model that predicts "all good" scores 94% to 99% accuracy and finds nothing.
+- **Unstable to explain:** Standard feature-importance rankings can change from one retrain to the next, so engineers can't trust them enough to adjust a live line.
+
+**The gap.** Existing approaches stop at "feature X is important." They don't say how reliable that finding is, what value the parameter should move to, or what the change is worth in money. Without those answers, the analysis never turns into a decision.
+
+**Our solution.** RootLens ingests multivariate process data and handles missing and imbalanced records. It then returns three answers:
+1. **Where:** ranked parameters and stages, each with a stability score, so unreliable rankings are flagged.
+2. **What to change:** corrective values restricted to ranges the line has actually run.
+3. **How much it saves:** projected scrap reduction and cost savings, shown as a range under stated assumptions.
+
+**Scope and limits.** The system is software-only and runs on public, anonymized data. It identifies statistically suspected drivers of failure, not proven physical causes, and corrective changes should be confirmed in a pilot on the real line.
+
+**How we measure success.** We use PR-AUC and MCC on a held-out later time window, rank stability across bootstrap resamples, and the observed failure rate inside versus outside each recommended window. Savings are shown as a low-to-high range.
+
+---
+
+one-line version for a slide title, use: *"Factories can see scrap rising. They can't see why, or what to change."*
