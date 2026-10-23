@@ -51,6 +51,34 @@ async def alert_call(req: CallReq):
         raise HTTPException(404, str(e)) from e
 
 
+@router.post("/alerts/view-damage")
+async def alert_view_damage(req: CallReq):
+    """View damage pressed on a model: alert once per model with its damage and suggested fixes."""
+    try:
+        return await run_in_threadpool(alerts.view_damage, req.id)
+    except LookupError as e:
+        raise HTTPException(404, str(e)) from e
+
+
+@router.get("/alerts/calls/{cid}")
+def alert_call_status(cid: str):
+    """Dialing until Sarvam reports the outcome: connected (with duration and transcript), no_answer, busy, failed."""
+    row = alerts.get_call(cid)
+    if row is None:
+        raise HTTPException(404, "call not found")
+    return row
+
+
+@router.post("/alerts/call-webhook")
+def alert_call_webhook(payload: dict):
+    """Sarvam posts here when a call attempt ends."""
+    try:
+        row = alerts.call_ended(payload)
+    except PermissionError as e:
+        raise HTTPException(403, str(e)) from e
+    return {"ok": row is not None}
+
+
 @router.post("/alerts/check")
 async def alert_check():
     return {"sent": await run_in_threadpool(alerts.check_once)}

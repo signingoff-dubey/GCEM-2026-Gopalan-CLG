@@ -73,6 +73,9 @@ def _twilio(path: str, form: dict) -> str:
                  {"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"})
 
 
+LAST_ATTEMPT: dict = {}   # attempt id of the most recent call, read by the alert service after send_call
+
+
 def send_call(to: str, message: str, variables: dict | None = None) -> str:
     number = digits(to)
     if not number:
@@ -91,8 +94,15 @@ def send_call(to: str, message: str, variables: dict | None = None) -> str:
                     "app_overrides": {"initial_bot_message": message,
                                       "initial_language_name": os.getenv("ALERT_CALL_LANGUAGE", "English")}},
                 "user_config": {"user_phone_number": f"+{number}"}}
-        _post(url, json.dumps(body).encode(),
-              {"X-API-Key": os.environ["SARVAM_WORKSPACE_KEY"], "Content-Type": "application/json"})
+        hook = os.getenv("ALERT_CALL_WEBHOOK_URL")
+        if hook:   # Sarvam posts the outcome (connected / no_answer / busy / failed, duration, transcript) here
+            body["webhook_config"] = {"url": hook, "metadata": {"token": os.getenv("ALERT_WEBHOOK_TOKEN", "")}}
+        reply = _post(url, json.dumps(body).encode(),
+                      {"X-API-Key": os.environ["SARVAM_WORKSPACE_KEY"], "Content-Type": "application/json"})
+        try:
+            LAST_ATTEMPT["id"] = json.loads(reply).get("attempt_id")
+        except ValueError:
+            LAST_ATTEMPT["id"] = None
         return f"calling +{number} (Sarvam)"
     if provider == "twilio":
         twiml = f'<Response><Say voice="alice">{escape(message)}</Say><Pause length="1"/><Say voice="alice">{escape(message)}</Say></Response>'

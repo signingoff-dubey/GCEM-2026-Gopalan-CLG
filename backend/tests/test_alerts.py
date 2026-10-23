@@ -142,3 +142,26 @@ def test_place_call_reports_one_item_and_skips_the_gap(env, monkeypatch):
     assert "bracket.ply" in sent[-1][2] and "2 crack regions" in sent[-1][3]["fault_details"]
     with pytest.raises(LookupError):
         service.report_call("i_missing")
+
+
+def test_call_status_follows_the_sarvam_webhook(env, monkeypatch):
+    _, sent = env
+    monkeypatch.setenv("ALERT_CALL_WEBHOOK_URL", "https://example.test/hook")
+    monkeypatch.setenv("ALERT_WEBHOOK_TOKEN", "t0k")
+
+    def fake_call(to, msg, v=None):
+        channels.LAST_ATTEMPT["id"] = "att_1"
+        return "calling"
+    monkeypatch.setattr(channels, "send_call", fake_call)
+    entry = service.test_alert("call")[0]
+    assert entry["attempt_id"] == "att_1"
+    c = TestClient(app)
+    assert c.get("/api/alerts/calls/att_1").json()["status"] == "dialing"
+    bad = {"attempt_id": "att_1", "status": "connected", "webhook_config": {"metadata": {"token": "nope"}}}
+    assert c.post("/api/alerts/call-webhook", json=bad).status_code == 403
+    ok = {"attempt_id": "att_1", "status": "connected", "duration": 72, "webhook_config": {"metadata": {"token": "t0k"}},
+          "interaction_transcript": [{"role": "agent", "en_text": "Hi boss"}, {"role": "user", "en_text": "Hold the batch"}]}
+    assert c.post("/api/alerts/call-webhook", json=ok).json()["ok"]
+    row = c.get("/api/alerts/calls/att_1").json()
+    assert row["status"] == "connected" and row["duration_s"] == 72 and row["transcript"][1]["text"] == "Hold the batch"
+    assert service.status()["calls"][0]["label"] == "Picked up, call ended"
