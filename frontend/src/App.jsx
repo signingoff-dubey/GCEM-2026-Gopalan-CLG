@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import Backdrop from './components/Backdrop.jsx';
 import { MotionConfig, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
@@ -11,6 +11,16 @@ import SafeWindows from './pages/SafeWindows';
 import Savings from './pages/Savings';
 import Captures from './pages/Captures';
 import Settings from './pages/Settings';
+import Timeline from './pages/Timeline';
+import Stations from './pages/Stations';
+import Pilot from './pages/Pilot';
+import Validation from './pages/Validation';
+import Compare from './pages/Compare';
+import Analyst from './pages/Analyst';
+import { StatusCard } from './components/ui/Gate';
+
+// The 3D viewer pulls in the GLTF loader and orbit controls, so the Inspection screen loads on demand.
+const Inspection = lazy(() => import('./pages/Inspection'));
 import { findPage, pages } from './navigation';
 import { useRoute, navigate } from './lib/router';
 
@@ -19,7 +29,14 @@ const SCREENS = {
   ranking: Ranking,
   windows: SafeWindows,
   savings: Savings,
+  timeline: Timeline,
+  stations: Stations,
+  pilot: Pilot,
+  validation: Validation,
+  compare: Compare,
+  analyst: Analyst,
   captures: Captures,
+  inspection: Inspection,
   settings: Settings,
 };
 
@@ -78,7 +95,9 @@ const App = () => {
               animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none', transform: 'none' } }}
               transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.9 }}
             >
-              <Screen key={param} id={param} />
+              <Suspense fallback={<StatusCard q={{ loading: true }} what="This page" />}>
+                <Screen key={param} id={param} />
+              </Suspense>
             </motion.div>
           </main>
           <BottomNav active={page.slug} onSelect={navigate} />

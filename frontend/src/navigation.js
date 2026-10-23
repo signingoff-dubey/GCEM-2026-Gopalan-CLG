@@ -1,4 +1,4 @@
-import { House, ListOrdered, Crosshair, PiggyBank, Camera, Settings, ChartNoAxesColumn, Wrench, Radio } from 'lucide-react';
+import { House, ListOrdered, Crosshair, PiggyBank, Camera, Settings, ChartNoAxesColumn, Wrench, Radio, Sparkles, ShieldCheck, History, Factory, FlaskConical, Scale, Box, Bot } from 'lucide-react';
 
 // Screens of the RootLens dashboard. `slug` is the URL hash (#/ranking).
 // Every screen reads the RootLens API (src/lib/api.js); a 503 from it means the artifact has not been generated yet.
@@ -7,16 +7,25 @@ export const pages = {
   ranking: { slug: 'ranking', label: 'Ranking', icon: ListOrdered, description: 'Statistically suspected drivers of failure, ranked, with stability across 50 bootstrap resamples.' },
   windows: { slug: 'windows', label: 'Safe windows', icon: Crosshair, description: 'Where each stable driver had the lowest failure rate, inside the range the line has run. Association, not proof.' },
   savings: { slug: 'savings', label: 'Savings', icon: PiggyBank, description: 'Model-estimated monthly savings as a range, under the assumptions you set.' },
-  captures: { slug: 'captures', label: 'Captures', icon: Camera, description: 'Runs scored by the model and checked against the safe windows. Phone captures will land here once the backend can read photos.' },
+  timeline: { slug: 'timeline', label: 'Timeline', icon: History, description: 'How the suspected drivers shifted from one time window to the next. Association, not proven cause.' },
+  stations: { slug: 'stations', label: 'Stations (Bosch)', icon: Factory, description: 'Bosch production line: part flow, fail rate per station and which stations are statistically suspected, stability-checked.' },
+  pilot: { slug: 'pilot', label: 'Pilot planner', icon: FlaskConical, description: 'How many parts, how many days and what it costs to test a suggested window on the line.' },
+  validation: { slug: 'validation', label: 'Validation', icon: ShieldCheck, description: 'Does the method work? Planted-fault benchmark against plain SHAP ranking, and a check on a dataset with known failure rules.' },
+  compare: { slug: 'compare', label: 'How we compare', icon: Scale, description: 'What RootLens covers, set against the public projects we checked.' },
+  analyst: { slug: 'analyst', label: 'AI Analyst', icon: Bot, description: 'Ask questions in plain language, or run a full investigation. Every number in an answer is checked against the analysis tools.' },
+  captures: { slug: 'captures', label: 'Captures', icon: Camera, description: 'Photograph or upload a process sheet, check what was read, and see the run scored against the safe windows. Run history is one tab over.' },
+  inspection: { slug: 'inspection', label: 'Inspection', icon: Box, description: 'Separate capability, not part of root-cause analysis: surface checks on a 3D scan, analyzed after upload.' },
   settings: { slug: 'settings', label: 'Settings', icon: Settings, description: 'Theme, accent, surfaces, density, the API address and analysis defaults.' },
 };
 
 // The rail shows Overview, then groups the user can fold away. A group holding the page you are on always opens.
 export const homeItem = pages.home;
 export const sidebarGroups = [
-  { id: 'analysis', title: 'Analysis', icon: ChartNoAxesColumn, defaultOpen: true, items: [pages.ranking, pages.windows] },
-  { id: 'impact', title: 'Impact', icon: Wrench, defaultOpen: true, items: [pages.savings] },
-  { id: 'live', title: 'Live', icon: Radio, defaultOpen: true, items: [pages.captures] },
+  { id: 'analysis', title: 'Analysis', icon: ChartNoAxesColumn, defaultOpen: true, items: [pages.ranking, pages.windows, pages.timeline, pages.stations] },
+  { id: 'impact', title: 'Impact', icon: Wrench, defaultOpen: true, items: [pages.savings, pages.pilot] },
+  { id: 'trust', title: 'Trust', icon: ShieldCheck, defaultOpen: false, items: [pages.validation, pages.compare] },
+  { id: 'assistant', title: 'Assistant', icon: Sparkles, defaultOpen: true, items: [pages.analyst] },
+  { id: 'live', title: 'Live', icon: Radio, defaultOpen: true, items: [pages.captures, pages.inspection] },
 ];
 
 export const groupOf = (slug) => sidebarGroups.find((g) => g.items.some((i) => i.slug === slug))?.id;
