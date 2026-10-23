@@ -41,10 +41,13 @@ def scale_pos_weight(y) -> float:
     return float((y == 0).sum() / max((y == 1).sum(), 1))
 
 
-def fit_lgbm(X_tr, y_tr, X_va, y_va, impute=True, n_estimators=None, seed=SEED) -> Trained:
+def fit_lgbm(X_tr, y_tr, X_va, y_va, impute=True, n_estimators=None, seed=SEED,
+             n_jobs=None) -> Trained:
     pre = Preprocessor(impute=impute).fit(X_tr)
     A, B = pre.transform(X_tr), pre.transform(X_va)
     params = dict(LGB_PARAMS, random_state=seed, scale_pos_weight=scale_pos_weight(y_tr))
+    if n_jobs is not None:
+        params["n_jobs"] = n_jobs
     if n_estimators is not None:
         params["n_estimators"] = n_estimators
         model = lgb.LGBMClassifier(**params).fit(A, y_tr)

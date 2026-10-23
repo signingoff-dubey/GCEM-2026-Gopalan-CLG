@@ -4,11 +4,12 @@ import time
 import numpy as np
 import pandas as pd
 import shap
+from joblib import Parallel, delayed
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from backend.config import (CORR_GROUP_THRESHOLD, N_BOOTSTRAP, N_PERMUTATIONS, SEED,
-                            STABLE_FREQ, TOP_K)
+from backend.config import (CORR_GROUP_THRESHOLD, N_BOOTSTRAP, N_JOBS, N_PERMUTATIONS,
+                            NULL_PERCENTILE, SEED, STABLE_FREQ, TOP_K)
 from backend.ml.features import Preprocessor, base_feature, correlation_groups
 from backend.ml.train import fit_lgbm
 
@@ -23,36 +24,44 @@ def shap_importance(trained, X: pd.DataFrame) -> pd.Series:
     return imp.groupby(base_feature).sum().sort_values(ascending=False)
 
 
-def bootstrap_ranks(X, y, n_estimators, impute, B=N_BOOTSTRAP, seed=SEED, progress=None) -> dict:
+def _boot_one(X, y, idx, n_estimators, impute, seed):
+    t0 = time.time()
+    t = fit_lgbm(X.iloc[idx], y.iloc[idx], X.iloc[idx], y.iloc[idx], impute=impute,
+                 n_estimators=n_estimators, seed=seed, n_jobs=1)
+    return shap_importance(t, X), time.time() - t0
+
+
+def bootstrap_ranks(X, y, n_estimators, impute, B=N_BOOTSTRAP, seed=SEED, progress=None,
+                    n_jobs=N_JOBS) -> dict:
     rng = np.random.default_rng(seed)
-    ranks, imps, times = [], [], []
-    for b in range(B):
-        t0 = time.time()
-        idx = rng.integers(0, len(X), len(X))
-        Xb, yb = X.iloc[idx], y.iloc[idx]
-        t = fit_lgbm(Xb, yb, Xb, yb, impute=impute, n_estimators=n_estimators, seed=seed + b)
-        imp = shap_importance(t, X)
-        imps.append(imp)
-        ranks.append(imp.rank(ascending=False, method="min"))
-        times.append(time.time() - t0)
-        if progress:
-            progress(b + 1, B)
+    draws = [rng.integers(0, len(X), len(X)) for _ in range(B)]
+    out = Parallel(n_jobs=n_jobs)(
+        delayed(_boot_one)(X, y, idx, n_estimators, impute, seed + b) for b, idx in enumerate(draws))
+    if progress:
+        progress(B, B)
+    imps = [imp for imp, _ in out]
+    ranks = [imp.rank(ascending=False, method="min") for imp in imps]
     R = pd.concat(ranks, axis=1).fillna(len(X.columns))
     I = pd.concat(imps, axis=1).fillna(0.0)
-    return {"ranks": R, "importance": I, "sec_per_bootstrap": float(np.mean(times))}
+    return {"ranks": R, "importance": I, "sec_per_bootstrap": float(np.mean([t for _, t in out]))}
 
 
-def permutation_null(X, y, n_estimators, impute, n_perm=N_PERMUTATIONS, seed=SEED) -> dict:
-    """Refit on shuffled labels. The 95th percentile of the *largest* importance across
-    permutations is the bar a real driver must clear (max-statistic, family-wise).
-    Bootstrap refits alone reuse the same noise, so a noise winner can look 'stable'."""
+def _null_one(X, y_perm, n_estimators, impute, seed):
+    t = fit_lgbm(X, y_perm, X, y_perm, impute=impute, n_estimators=n_estimators, seed=seed, n_jobs=1)
+    return shap_importance(t, X).to_numpy()
+
+
+def permutation_null(X, y, n_estimators, impute, n_perm=N_PERMUTATIONS, seed=SEED,
+                     pct=NULL_PERCENTILE) -> dict:
+    """Refit on shuffled labels and pool every feature's null importance. A real driver must
+    beat the given percentile of that pool. Bootstrap refits alone reuse the same noise, so a
+    noise winner can look 'stable'. 99.9 was chosen on the planted-fault benchmark: zero flags
+    under null labels, better recall than a max-statistic bar."""
     rng = np.random.default_rng(seed + 7)
-    max_imp = []
-    for i in range(n_perm):
-        yp = pd.Series(rng.permutation(y.to_numpy()), index=y.index)
-        t = fit_lgbm(X, yp, X, yp, impute=impute, n_estimators=n_estimators, seed=seed + 500 + i)
-        max_imp.append(float(shap_importance(t, X).max()))
-    return {"threshold": float(np.percentile(max_imp, 95)), "max_importance": max_imp,
+    perms = [pd.Series(rng.permutation(y.to_numpy()), index=y.index) for _ in range(n_perm)]
+    pooled = np.concatenate(Parallel(n_jobs=N_JOBS)(
+        delayed(_null_one)(X, yp, n_estimators, impute, seed + 500 + i) for i, yp in enumerate(perms)))
+    return {"threshold": float(np.percentile(pooled, pct)), "percentile": pct,
             "n_permutations": n_perm}
 
 
@@ -113,8 +122,8 @@ def build_ranking(X, y, n_estimators, impute, B=N_BOOTSTRAP, top_k=TOP_K,
     ]
     return {
         "method": f"LightGBM mean |SHAP| over {B} bootstrap refits; stable if in top-{top_k} "
-                  f"in >= {int(stable_freq * 100)}% of refits AND importance beats the 95th percentile "
-                  f"of the max importance under {null['n_permutations']} label permutations",
+                  f"in >= {int(stable_freq * 100)}% of refits AND importance beats the {null['percentile']}th "
+                  f"percentile of null importances from {null['n_permutations']} label permutations",
         "permutation_null": null,
         "n_bootstrap": B,
         "sec_per_bootstrap": boot["sec_per_bootstrap"],

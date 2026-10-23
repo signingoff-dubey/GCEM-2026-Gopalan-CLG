@@ -169,6 +169,16 @@ def route_links(df, y, sts, info, max_links=80) -> dict:
     }
 
 
+def _station_boot(Xtr, ytr, idx, params, seed, shap_rows, col_map) -> pd.Series:
+    import lightgbm as lgb
+    import shap
+    m = lgb.LGBMClassifier(**params, random_state=seed, n_jobs=2).fit(Xtr.iloc[idx], ytr.iloc[idx])
+    sv = shap.TreeExplainer(m).shap_values(shap_rows)
+    sv = sv[1] if isinstance(sv, list) else sv
+    per_col = pd.Series(np.abs(sv).mean(axis=0), index=Xtr.columns)
+    return per_col.groupby(col_map).sum()
+
+
 def station_ranking(df, y, sts, info, B=20, n_estimators=150, top_k=10, stable_freq=0.7,
                     progress=None) -> dict:
     """LightGBM on station readings + route/timing features; |SHAP| summed per station,
@@ -199,20 +209,19 @@ def station_ranking(df, y, sts, info, B=20, n_estimators=150, top_k=10, stable_f
                  "prevalence_sample": float(yte.mean()),
                  "note": "Prevalence and PR-AUC are on the downsampled sample, not the full line."}
 
+    from joblib import Parallel, delayed
+
+    from backend.config import N_JOBS
     rng = np.random.default_rng(SEED)
     shap_rows = Xtr.sample(min(5000, len(Xtr)), random_state=SEED)
-    ranks, imps = [], []
-    for b in range(B):
-        idx = rng.integers(0, len(Xtr), len(Xtr))
-        m = lgb.LGBMClassifier(**params, random_state=SEED + b).fit(Xtr.iloc[idx], ytr.iloc[idx])
-        sv = shap.TreeExplainer(m).shap_values(shap_rows)
-        sv = sv[1] if isinstance(sv, list) else sv
-        per_col = pd.Series(np.abs(sv).mean(axis=0), index=X.columns)
-        per_station = per_col.groupby(col_map).sum()
-        imps.append(per_station)
-        ranks.append(per_station.rank(ascending=False, method="min"))
-        if progress:
-            progress(b + 1, B)
+    draws = [rng.integers(0, len(Xtr), len(Xtr)) for _ in range(B)]
+    # fewer workers than SECOM: each holds a copy of the ~300 MB sample
+    imps = Parallel(n_jobs=min(N_JOBS, 6))(
+        delayed(_station_boot)(Xtr, ytr, idx, params, SEED + b, shap_rows, col_map)
+        for b, idx in enumerate(draws))
+    if progress:
+        progress(B, B)
+    ranks = [imp.rank(ascending=False, method="min") for imp in imps]
     R = pd.concat(ranks, axis=1).fillna(len(col_map.unique()))
     I = pd.concat(imps, axis=1).fillna(0.0)
     freq = (R <= top_k).mean(axis=1)
