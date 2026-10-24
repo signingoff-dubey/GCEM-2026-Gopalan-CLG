@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Crosshair, Loader2, RefreshCw, TriangleAlert } from 'lucide-react';
+import { Box, Crosshair, Layers, Loader2, Mail, MessageCircle, PhoneCall, RefreshCw, TriangleAlert } from 'lucide-react';
 import { CardTitle, Toggle } from '../ui';
 import { api, post } from '../../lib/api';
 
@@ -13,7 +13,7 @@ const State = ({ s }) => {
   const map = {
     connected: ['bg-good/15 text-good', 'bg-good animate-pulse', 'Connected'],
     offline: ['bg-bad/12 text-bad', 'bg-bad', 'Not reachable'],
-    off: ['bg-ink/8 text-ink/55', 'bg-ink/35', 'Off'],
+    off: ['bg-ink/8 text-ink/55', 'bg-ink/35', 'Not connected'],
   };
   const [cls, dot, label] = map[s] ?? map.off;
   return (
@@ -22,6 +22,29 @@ const State = ({ s }) => {
     </span>
   );
 };
+
+// Where alerts and reports can go. The agent call is live; the others can be connected to the same alert
+// pipeline and are shown switched off until they are set up.
+const CHANNELS = [
+  { name: 'Agent call', icon: PhoneCall, on: true, what: 'Calls the plant manager with the damage report and answers questions on the call.' },
+  { name: 'WhatsApp', icon: MessageCircle, on: false, what: 'Sends the damage report and the suggested fix as a WhatsApp message.' },
+  { name: 'Email', icon: Mail, on: false, what: 'Emails the report, the safe windows and the savings range to the quality team.' },
+  { name: 'CMS', icon: Layers, on: false, what: "Publishes reports and fixes to the plant's content management system." },
+];
+
+const Channel = ({ c }) => (
+  <div className={`flex items-start gap-3 rounded-2xl p-4 ring-1 ${c.on ? 'bg-accent/8 ring-accent/25' : 'bg-ink/5 ring-ink/8'}`}>
+    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${c.on ? 'bg-accent text-on-accent' : 'bg-ink/10 text-ink/55'}`}><c.icon size={18} /></span>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <p className="font-semibold">{c.name}</p>
+        <State s={c.on ? 'connected' : 'off'} />
+      </div>
+      <p className="mt-1 text-sm text-ink/65">{c.what}</p>
+    </div>
+    <Toggle checked={c.on} onChange={() => {}} label={`${c.name} ${c.on ? 'on' : 'off'}`} disabled />
+  </div>
+);
 
 const IntegrationsTab = () => {
   const [st, setSt] = useState(null);
@@ -82,6 +105,13 @@ const IntegrationsTab = () => {
             )}
           </>
         )}
+      </section>
+
+      <section className="card xl:col-span-2">
+        <CardTitle sub="Where RootLens sends alerts and reports. Push notifications to the phone app are always on.">Alert and report channels</CardTitle>
+        <div className="grid gap-3 md:grid-cols-2">
+          {CHANNELS.map((c) => <Channel key={c.name} c={c} />)}
+        </div>
       </section>
 
       {st?.connected && (
